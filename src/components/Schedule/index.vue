@@ -91,25 +91,25 @@
             </div>
 
             <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
-
-            <!-- 下移箭头 -->
-            <!-- <div
-							class="bottom_arrow"
-							@mousedown.stop="_start"
-							@mousemove="bottom_move($event, index, i)"
-							@mouseup="end"
-							
-						>
-            <div class="arrow"></div> -->
-            <!-- <div class="time">{{ item_1.endTime }}</div> -->
-            <!-- </div> -->
-            <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
-
             <div class="show-time">
               <div class="i">{{ item_1.startTime }}</div>
               <div class="icon i">-</div>
               <div class="i">{{ item_1.endTime }}</div>
             </div>
+
+            <!-- 下移箭头 -->
+            <div
+              class="bottom_arrow"
+              @mousedown.stop="_start"
+              @mousemove="bottom_move($event, tlIndex, i)"
+              @mouseup="end"
+              @mouseleave="end"
+            >
+              <div class="arrow"></div>
+            </div>
+            <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
+
+           
             <!-- v-if="!(targetIndex[0] === index && targetIndex[1] === i)" -->
           </div>
 
@@ -208,10 +208,10 @@ const Block = function (target, that) {
 };
 
 class SelectBlock extends Block {
-  constructor(target, that){
-    super(target, that)
+  constructor(target, that) {
+    super(target, that);
     this.roof = target.roof;
-    this.base = target.base
+    this.base = target.base;
   }
 }
 
@@ -223,7 +223,7 @@ export default {
         // 结束日期与显示天数有一个就行
         endDate: "", // 结束日期
         days: 9, // 显示天数
-        timeRange: [7, 24], // 时间范围
+        timeRange: [7, 23], // 时间范围
         select: true,
       },
     },
@@ -633,9 +633,10 @@ export default {
 
     // 选择块的下箭头移动
     bottom_move(event, index, i) {
-      let target = this.seven[index].select[i];
-      let change = event.touches[0].pageY - start; // 正增负减
-      let height = change + this.seven[index].select[i].height; // height为最终高度
+      if (!mouseDown) return;
+      let target = this.table[index].selectBlock[i];
+      let change = event.pageY - start; // 正增负减
+      let height = change + target.height; // height为最终高度
       if (height + target.top > target.base) {
         //	底线越界
         height = target.base - target.top;
@@ -643,11 +644,9 @@ export default {
         // 改变后是否低于最小高度
         height = hours_height;
       }
-      this.seven[index].select[i].endTime = this.computeTimeByTop(
-        target.top + height
-      );
-      this.seven[index].select[i].height = height;
-      start = event.touches[0].pageY;
+      target.endTime = this.computeTimeByTop(target.top + height);
+      target.height = height;
+      start = event.pageY;
     },
 
     // 选择块的上箭头移动
@@ -657,8 +656,9 @@ export default {
       let change = start - event.pageY; // 正增负减
       let height = change + target.height;
       let top = target.top - change;
-      let limitTop = target.top + target.height - hours_height
-      if (top < 0) {/**target.roof**/
+      let limitTop = target.top + target.height - hours_height;
+      if (top < 0) {
+        /**target.roof**/
         top = 0;
         height = target.height + target.top - top;
       } else if (top > limitTop) top = limitTop;
@@ -698,7 +698,7 @@ export default {
       console.log(top, target);
       if (top < target.roof) {
         top = target.roof;
-        console.log('top', top);
+        console.log("top", top);
       } else if (target.base - target.height < top) {
         top = target.base - target.height;
       }
@@ -1190,6 +1190,7 @@ $BDC: #e8e8e8;
         .select {
           position: absolute;
           left: 0;
+          z-index: 10;
           width: 100%;
           border-radius: 6px;
           background-color: #2bbff8;
@@ -1205,7 +1206,7 @@ $BDC: #e8e8e8;
             height: 12px;
             background: #2ffff880;
             text-align: center;
-
+            flex-shrink: 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -1227,18 +1228,20 @@ $BDC: #e8e8e8;
           // .icon-jiantou {
           //   background-color: rgba(0, 0, 0, 0.1);
           // }
-          // .show-time {
-          //   margin: 5px 0;
-          //   height: 100%;
-          //   display: flex;
-          //   flex-direction: column;
-          //   align-items: center;
-          //   justify-content: space-between;
-          //   .icon {
-          //     line-height: 12px;
-          //     text-align: center;
-          //   }
-          // }
+          .show-time {
+            flex: 1;
+            overflow: hidden;
+            margin: 5px 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            .icon {
+              line-height: 12px;
+              text-align: center;
+            }
+          }
           // .icon-cuo2 {
           //   position: absolute;
           //   top: -20px;
