@@ -46,23 +46,6 @@
             </div>
           </div>
 
-          <!-- 老师块 -->
-          <!-- <template v-if="type === 2">
-            <div
-              v-for="(item_1, i) in item.plan"
-              :class="['class', 'center', item_1.showColor]"
-              :key="i"
-              :style="{
-                height: item_1.height + 'px',
-                top: item_1.top + 'px',
-                'z-index': 2,
-              }"
-              @tap.stop="_tap(item_1)"
-            >
-              <text class="text">{{ item_1.courseName }}</text>
-            </div>
-          </template> -->
-
           <!-- 选择块 select -->
           <div
             v-for="(item_1, i) in item.selectBlock || []"
@@ -92,9 +75,9 @@
 
             <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
             <div class="show-time">
-              <div class="i">{{ item_1.startTime }}</div>
+              <div class="i">{{ item_1.startTimeText }}</div>
               <div class="icon i">-</div>
-              <div class="i">{{ item_1.endTime }}</div>
+              <div class="i">{{ item_1.endTimeText }}</div>
             </div>
 
             <!-- 下移箭头 -->
@@ -208,10 +191,11 @@ const Block = function (target, that) {
 };
 
 class SelectBlock extends Block {
-  constructor(target, that) {
+  constructor(target, that, index) {
     super(target, that);
-    this.roof = target.roof;
-    this.base = target.base;
+    const { roof, base } = that.computeRootAndBase(this, index)
+    this.roof = roof;
+    this.base = base;
   }
 }
 
@@ -225,6 +209,8 @@ export default {
         days: 9, // 显示天数
         timeRange: [7, 23], // 时间范围
         select: true,
+        // 选择模式下，选择块是否可以覆盖其他类型块
+        selectCover: false
       },
     },
 
@@ -294,8 +280,6 @@ export default {
       default: -1,
     },
 
-    // ---------- new
-
     // 已经存在的选择块
     select_existed: {
       type: Array,
@@ -306,16 +290,19 @@ export default {
     assign: {
       type: Boolean,
     },
+
     // 供选时间段数据
     assign_times: {
       type: Array,
       default: [],
     },
+
     // 供选时间块上选择时间块的数量限制
     assign_number: {
       type: Number,
       default: 1,
     },
+
     // 预约指定教师状态（开启点击空闲进入预约教师页面功能）
     reservation: {
       type: Boolean,
@@ -381,12 +368,10 @@ export default {
   computed: {
     timestamp() {
       const [start, end] = this.tableAttrs.timeRange;
-      console.log(start, end);
       const stamp = [];
       for (let i = 0; i <= end - start; i++) {
         stamp.push(start + i);
       }
-      console.log(stamp);
       return stamp;
     },
   },
@@ -447,44 +432,43 @@ export default {
 
     // 计算一个时间块的上限下限位置
     computeRootAndBase(block, index) {
-      // 总计此tl上的select_block与plan_block
-      let target = this.seven[index].select.concat(this.seven[index].plan);
+      console.log('block', block, index);
+      // 上方元素的底部top（元素的最大顶部top，下方元素的顶部top（元素底部最大top）
+      let roof = 0, base = tbody;
+      if(this.tableAttrs.selectCover) return { roof, base };
+      const tl = this.table[index]
+      // 总计此tl上的selectblock与block
+      let target = tl.block.concat(tl.selectBlock);
 
       // 块的默认顶部底部位置
-      let block_up = block.top,
-        block_down = block.top + block.height;
-
-      // 上方元素的底部top（元素的最大顶部top，下方元素的顶部top（元素底部最大top）
-      let roof = 0,
-        base = tbody;
+      let blockRoof = block.top,
+          blockBase = block.top + block.height;
       target.forEach((item) => {
         // 该块的顶部与底部top
-        let item_up = item.top,
-          item_down = item.top + item.height;
-
+        let itemRoof = item.top,
+          itemBase = item.top + item.height;
         // 生成块的底部在此块顶部之上
-        if (block_down <= item_up && base > item_up) base = item_up;
+        if (blockBase <= itemRoof && base > itemRoof) base = itemRoof;
         // 生成块的顶部在该块的底部之下
-        else if (block_up >= item_down && roof < item_down) roof = item_down;
-        // console.log(roof, base);
+        else if (blockRoof >= itemBase && roof < itemBase) roof = itemBase;
       });
 
       // 不可选时间段的限制
-      let currentTime = new Date();
-      currentTime.setHours(currentTime.getHours() + within_hours);
+      // let currentTime = new Date();
+      // currentTime.setHours(currentTime.getHours() + within_hours);
 
       // 上限位置转化为时间对象
-      let roof_Time = new Date(
-        `${this.seven[index].date} ${this.computeTimeByTop(roof)}`
-      );
+      // let roof_Time = new Date(
+      //   `${this.seven[index].date} ${this.computeTimeByTop(roof)}`
+      // );
 
-      // 若是在限制时间内
-      if (+currentTime > +roof_Time) {
-        roof = this.computeTopByTime(+currentTime);
-      }
-      return { roof: roof, base: base };
+      // // 若是在限制时间内
+      // if (+currentTime > +roof_Time) {
+      //   roof = this.computeTopByTime(+currentTime);
+      // }
+      return { roof, base };
     },
-
+    
     // 根据时间块时间计算时间块高度
     computeTopByTime(time) {
       // 根据时间计算高度
@@ -527,32 +511,18 @@ export default {
     appendSelectBlock(event, index) {
       console.log("appendSelectBlock", event, index);
       if (!this.tableAttrs.select) return; // 是否开启选择模式
-      // 选择数量限制（ -1 不限制数量 ）
-      // if (this.select_number <= number && this.select_number !== -1) {
-      //   uni.showToast({
-      //     title: `只能选择${this.select_number}个时间段`,
-      //     icon: "none",
-      //   });
-      //   return;
-      // }
-
-      // let target = this.seven[index].select.concat(this.seven[index].plan);
       let top = event.target.offsetTop; // 点击元素与tbody距离
-      let hours = Math.floor(top / hours_height); // 与顶部距离hours个小时
       const dateText = this.table[index].dateText;
+      
       let obj = new SelectBlock(
         {
-          roof: 0,
-          base: tbody,
           startTime: dateText + " " + this.computeTimeByTop(top),
           endTime: dateText + " " + this.computeTimeByTop(hours_height + top),
         },
-        this
+        this, index
       );
-      this.table[index].selectBlock
-        ? this.table[index].selectBlock.push(obj)
-        : (this.table[index].selectBlock = [obj]);
-      console.log("obj", this.table[index].selectBlock);
+      // let {roof, base} = this.computeRootAndBase()
+      this.table[index].selectBlock.push(obj)
       // let currentTime = new Date();
       // currentTime.setHours(currentTime.getHours() + within_hours); // 当前时间的12小时后
 
@@ -644,7 +614,7 @@ export default {
         // 改变后是否低于最小高度
         height = hours_height;
       }
-      target.endTime = this.computeTimeByTop(target.top + height);
+      target.endTimeText = this.computeTimeByTop(target.top + height);
       target.height = height;
       start = event.pageY;
     },
@@ -657,16 +627,17 @@ export default {
       let height = change + target.height;
       let top = target.top - change;
       let limitTop = target.top + target.height - hours_height;
-      if (top < 0) {
-        /**target.roof**/
-        top = 0;
-        height = target.height + target.top - top;
+      if (top < target.roof) {
+        top = target.roof
+        height = target.height + target.top - target.roof;
+        console.log('height', height);
       } else if (top > limitTop) top = limitTop;
+
       if (height <= hours_height) {
         // 高度最小
         height = hours_height;
       }
-      target.startTime = this.computeTimeByTop(top);
+      target.startTimeText = this.computeTimeByTop(top);
       target.top = top;
       target.height = height;
       start = event.pageY;
@@ -702,8 +673,8 @@ export default {
       } else if (target.base - target.height < top) {
         top = target.base - target.height;
       }
-      target.startTime = this.computeTimeByTop(top); // 开始时间计算
-      target.endTime = this.computeTimeByTop(top + target.height); // 结束时间计算
+      target.startTimeText = this.computeTimeByTop(top); // 开始时间计算
+      target.endTimeText = this.computeTimeByTop(top + target.height); // 结束时间计算
       target.top = top;
       // 更新最新位置
       start = event.pageY;
@@ -1021,7 +992,7 @@ export default {
 
     // 创建表格基础数据结构
     createBaseConstruction() {
-      let { startDate, days } = this.tableAttrs;
+      let { startDate, days, select } = this.tableAttrs;
       if (typeof startDate === "string") startDate = new Date(startDate);
       // 行数据的工厂函数
       const tl = function (date /* date是一个时间对象 */) {
@@ -1030,8 +1001,7 @@ export default {
         this.dateText = date.formatTime("YYYY/MM/DD");
         // 便面后面push数据报错，这里先定义
         this.block = [];
-        // this.plan = [];
-        // this.select = [];
+        if(select) this.selectBlock = [];
         // this.assign = [];
         this.dayText = date.getDayText("周");
       };
