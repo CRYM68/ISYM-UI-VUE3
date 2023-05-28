@@ -23,7 +23,7 @@
             v-for="(item, index) in timestamp.length"
             :key="index"
             id="td"
-            @click="appendSelectBlock($event, tlIndex)"
+            @click="appendSelectBlock($event, tlIndex, index)"
           ></div>
           <!-- 块 -->
           <!-- 纯展示 -->
@@ -180,7 +180,7 @@ const Block = function (target, that) {
     let distanceHours = start.getHours() - timeRangeStart;
     return (distanceHours * 60 + start.getMinutes()) * (hours_height / 60);
   };
-  this.courseName = target.content || "无名"; // 课程名称（模块名称)
+  this.content = target.content || "无名"; // 课程名称（模块名称)
   this.startTimeDateObject = new Date(target.startTime);
   this.endTimeDateObject = new Date(target.endTime);
   this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
@@ -484,18 +484,34 @@ export default {
       return (hours_height / 60) * minute + (hours - 8) * hours_height;
     },
 
-    // 根据时间块的top值计算top值所在位置的时间
+    // 根据时间块的top值计算top值所在位置的时间（存在误差）
     computeTimeByTop(top) {
       // 根据top(与tbody的距离)计算时间
       // console.log('top', top);
+      // 极限值判断
+      if(top === tbody) {
+        let hours = this.tableAttrs.timeRange[1] + 1;
+        if(hours === 24) hours = 0;
+        return (hours < 10 ? "0" + hours : hours) + ':' + '00'
+      }
       const timeRangeStart = this.tableAttrs.timeRange[0];
       const totalMinute = (top * 60) / hours_height; // 总分钟数
       let hours = Math.floor(totalMinute / 60) + timeRangeStart; // 求出小时
       let minute = Math.floor(totalMinute % 60); // 求出分钟
+      /**
+       * 计算误差处理方式
+       * 1. 判断是否是生成元素，是，就直接将分钟设为00（也是缩小误差范围的做法）
+       * 2. 生成元素不使用该方法，直接通过td元素index判断时间（比较好的做法，已经实现）
+       * 3. 为了完善2方法， 给computeTimeByTop添加极限值判断
+       */
+      // 直接以十分钟作为基础单位，干掉小数导致的误差问题(极端情况下依旧会出现误差)
+      // 拉大分钟区间， 减小误差出现几率
       // minute = Math.ceil(minute / 10) * 10;
       // if (minute === 60) {
       //   (hours += 1), (minute = 0);
       // }
+      
+      
       return (
         (hours < 10 ? "0" + hours : hours) +
         ":" +
@@ -508,21 +524,31 @@ export default {
      * */
 
     // 添加普通选择块
-    appendSelectBlock(event, index) {
-      console.log("appendSelectBlock", event, index);
+    appendSelectBlock(event, tlIndex, index) {
+      console.log("appendSelectBlock", event, tlIndex);
       if (!this.tableAttrs.select) return; // 是否开启选择模式
       let top = event.target.offsetTop; // 点击元素与tbody距离
-      const dateText = this.table[index].dateText;
-      
+      const dateText = this.table[tlIndex].dateText;
+      const timeRangeStart = this.tableAttrs.timeRange[0]
       let obj = new SelectBlock(
         {
-          startTime: dateText + " " + this.computeTimeByTop(top),
-          endTime: dateText + " " + this.computeTimeByTop(hours_height + top),
+          // 会有误差出现
+          // startTime: dateText + " " + this.computeTimeByTop(top),
+          // endTime: dateText + " " + this.computeTimeByTop(hours_height + top),
+          startTime: (function(){
+            let hours = timeRangeStart + index;
+            return `${dateText} ${(hours < 10 ? "0" + hours : hours)}:00`;
+          })(),
+
+          endTime: (function(){
+            let hours = timeRangeStart + index + 1;
+            return `${dateText} ${(hours < 10 ? "0" + hours : hours)}:00`;
+          })(),
         },
-        this, index
+        this, tlIndex
       );
       // let {roof, base} = this.computeRootAndBase()
-      this.table[index].selectBlock.push(obj)
+      this.table[tlIndex].selectBlock.push(obj)
       // let currentTime = new Date();
       // currentTime.setHours(currentTime.getHours() + within_hours); // 当前时间的12小时后
 
@@ -1020,10 +1046,14 @@ export default {
       // 计算七天时间，生成基础架构
       this.createBaseConstruction();
       this.$nextTick(() => {
-        hours_height = document.querySelector("#td").offsetHeight;
         tbody = document.querySelector("#tbody").offsetHeight;
+        // hours_height = document.querySelector("#td").offsetHeight;
+        hours_height = tbody / (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0] + 1);
+      // 移动过程中小数误差很小没人在意，但是在极点和生成块的时候，可时间手动去掉误差
+        console.dir(document.querySelector("#td") );
+        console.dir(document.querySelector("#tbody"));
         this.computeBlock();
-        console.table(hours_height);
+        console.table('hoursHeight',hours_height);
       });
     },
   },
@@ -1046,7 +1076,7 @@ $BDC: #e8e8e8;
   display: flex;
   // height: 994px;
   width: 750px;
-  height: 80vh;
+  height: 440px;
   border: 1px solid $BDC;
   border-radius: 10px;
   background-color: #ffffff;
@@ -1082,7 +1112,7 @@ $BDC: #e8e8e8;
 
   .table {
     width: calc(100% - 40px);
-    height: 80vh;
+    height: 100%;
     overflow: hidden;
     display: flex;
     .tl {
