@@ -18,26 +18,16 @@
           <text class="th center">{{ item.days }}日</text>
         </div>
         <div class="tbody" id="tbody" ref="tbody">
-          <div
-            class="td center"
-            v-for="(item, index) in timestamp.length"
-            :key="index"
-            id="td"
-            @click="appendSelectBlock($event, tlIndex, index)"
-          ></div>
+          <div class="td center" v-for="(item, index) in timestamp.length" :key="index" id="td"
+            @click="appendSelectBlock($event, tlIndex, index)"></div>
           <!-- 块 -->
           <!-- 纯展示 -->
 
-          <div
-            v-for="(blockItem, i) in item.block"
-            :class="['block', 'class', 'center']"
-            :key="i"
-            :style="{
-              height: blockItem.height + 'px',
-              top: blockItem.top + 'px',
-              'z-index': 2,
-            }"
-          >
+          <div v-for="(blockItem, i) in item.block" :class="['block', 'class', 'center']" :key="i" :style="{
+            height: blockItem.height + 'px',
+            top: blockItem.top + 'px',
+            'z-index': 2,
+          }">
             <div class="content">
               <div>{{ blockItem.content }}</div>
               <div>
@@ -47,29 +37,15 @@
           </div>
 
           <!-- 选择块 select -->
-          <div
-            v-for="(item_1, i) in item.selectBlock || []"
-            :class="['select', 'center']"
-            :key="i"
-            :style="{
-              height: item_1.height + 'px',
-              top: item_1.top + 'px',
-            }"
-            @click.stop="target([tlIndex, i])"
-            @mousedown.stop="start($event, [tlIndex, i])"
-            @mousemove.stop="move($event, tlIndex, i)"
-            @mouseup.stop="end"
-            @mouseleave="end"
-            @longpress="remove(1, tlIndex, i)"
-          >
+          <div v-for="(item_1, i) in item.selectBlock || []" :class="['select', 'center']" :key="i" :style="{
+            height: item_1.height + 'px',
+            top: item_1.top + 'px',
+          }" @click.stop="target([tlIndex, i])" @mousedown.stop="start($event, [tlIndex, i])"
+            @mousemove.stop="move($event, tlIndex, i)" @mouseup.stop="end" @mouseleave="end"
+            @longpress="remove(1, tlIndex, i)">
             <!-- 上移箭头 -->
-            <div
-              class="top_arrow"
-              @mousedown.stop="_start"
-              @mousemove.stop="top_move($event, tlIndex, i)"
-              @mouseup.stop="end"
-              @mouseleave="end"
-            >
+            <div class="top_arrow" @mousedown.stop="_start" @mousemove.stop="top_move($event, tlIndex, i)"
+              @mouseup.stop="end" @mouseleave="end">
               <div class="arrow"></div>
             </div>
 
@@ -81,13 +57,8 @@
             </div>
 
             <!-- 下移箭头 -->
-            <div
-              class="bottom_arrow"
-              @mousedown.stop="_start"
-              @mousemove="bottom_move($event, tlIndex, i)"
-              @mouseup="end"
-              @mouseleave="end"
-            >
+            <div class="bottom_arrow" @mousedown.stop="_start" @mousemove="bottom_move($event, tlIndex, i)" @mouseup="end"
+              @mouseleave="end">
               <div class="arrow"></div>
             </div>
             <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
@@ -137,12 +108,7 @@
 </template>
 
 <script>
-// let app = getApp();
-
 // --- 计算项
-let tbodyHeight = 0;
-let tbody_pageY = 0;
-
 // 1 小时的块高度
 let hours_height = 0;
 
@@ -168,21 +134,23 @@ let within_hours = 0;
 // 选择块最小时间（小时）
 let min_time = 1;
 
-const Block = function (target, that) {
+const Block = function (target, that, check = true) {
   this.startTimeDateObject = new Date(target.startTime);
-  if (this.startTimeDateObject.toString() === "Invalid Date")
-    throw new Error("Invalid startTime");
   this.endTimeDateObject = new Date(target.endTime);
-  if (this.endTimeDateObject.toString() === "Invalid Date")
-    throw new Error("Invalid endTime");
-  if (this.endTimeDateObject < this.startTimeDateObject)
-    throw new Error("Invalid data.The end time should be longer than the start time");
-  if (
-    this.endTimeDateObject.getFullYear() !== this.startTimeDateObject.getFullYear() ||
-    this.endTimeDateObject.getMonth() !== this.startTimeDateObject.getMonth() ||
-    this.endTimeDateObject.getDate() !== this.startTimeDateObject.getDate()
-  )
-    throw new Error("Invalid data.The start time and end time should be the same day");
+  if (check) {
+    if (this.startTimeDateObject.toString() === "Invalid Date")
+      throw new Error("Invalid startTime");
+    if (this.endTimeDateObject.toString() === "Invalid Date")
+      throw new Error("Invalid endTime");
+    if (this.endTimeDateObject < this.startTimeDateObject)
+      throw new Error("Invalid data.The end time should be longer than the start time");
+    if (
+      this.endTimeDateObject.getFullYear() !== this.startTimeDateObject.getFullYear() ||
+      this.endTimeDateObject.getMonth() !== this.startTimeDateObject.getMonth() ||
+      this.endTimeDateObject.getDate() !== this.startTimeDateObject.getDate()
+    )
+      throw new Error("Invalid data.The start time and end time should be the same day");
+  }
   let height = (start, end) =>
     Math.floor((end - start) / 60000) * (hours_height / 60);
   // 计算以tboby为父元素的top
@@ -191,7 +159,7 @@ const Block = function (target, that) {
     let distanceHours = start.getHours() - timeRangeStart;
     return (distanceHours * 60 + start.getMinutes()) * (hours_height / 60);
   };
-  this.content = target.content || "无名"; // 课程名称（模块名称)
+  this.content = target.content || ''; // 课程名称（模块名称)
   this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
   this.endTimeText = this.endTimeDateObject.formatTime("HH:MM");
   this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
@@ -200,11 +168,11 @@ const Block = function (target, that) {
 };
 
 class SelectBlock extends Block {
-  constructor(target, that, index) {
+  constructor(target, that) {
     super(target, that);
-    const { roof, base } = that.computeRootAndBase(this, index);
-    this.roof = roof;
-    this.base = base;
+    this.roof = target.roof;
+    this.base = target.base;
+
   }
 }
 
@@ -249,7 +217,7 @@ export default {
         {
           content: "语文", // 显示内容
           startTime: new Date(), // 开始时间
-          endTime: new Date(Date.now() + 2 * 60 * 60 *1000), // 结束时间
+          endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
         },
         {
           content: "Error", // 显示内容
@@ -410,6 +378,7 @@ export default {
 
     // 计算一个时间块的上限下限位置
     computeRootAndBase(block, index) {
+      // block 只要有top， height即可
       console.log("block", block, index);
       // 上方元素的底部top（元素的最大顶部top，下方元素的顶部top（元素底部最大top）
       let roof = 0,
@@ -422,6 +391,7 @@ export default {
       // 块的默认顶部底部位置
       let blockRoof = block.top,
         blockBase = block.top + block.height;
+
       target.forEach((item) => {
         // 该块的顶部与底部top
         let itemRoof = item.top,
@@ -503,30 +473,39 @@ export default {
 
     // 添加普通选择块
     appendSelectBlock(event, tlIndex, index) {
+      console.log(event);
       if (!this.tableAttrs.select) return; // 是否开启选择模式
-      let top = event.target.offsetTop; // 点击元素与tbody距离
+      let top = event.target.offsetTop + event.offsetY; // 点击位置与tbody距离
       const dateText = this.table[tlIndex].dateText;
       const timeRangeStart = this.tableAttrs.timeRange[0];
-      let obj = new SelectBlock(
-        {
-          // 会有误差出现
-          // startTime: dateText + " " + this.computeTimeByTop(top),
-          // endTime: dateText + " " + this.computeTimeByTop(hours_height + top),
-          startTime: (function () {
-            let hours = timeRangeStart + index;
-            return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
-          })(),
-
-          endTime: (function () {
-            let hours = timeRangeStart + index + 1;
-            return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
-          })(),
-        },
-        this,
-        tlIndex
-      );
-      // let {roof, base} = this.computeRootAndBase()
-      this.table[tlIndex].selectBlock.push(obj);
+      console.log(top);
+      const { roof, base } = this.computeRootAndBase({ top, height: 0 }, tlIndex);
+      console.log(roof, base);
+      if (base - roof < hours_height) {
+        window.alert('该时间段不足以生成选择快')
+        return;
+      }
+      let obj = { roof, base }
+      let offsetTop = event.target.offsetTop;
+      // 如果点击到的td有足够的高度
+      if (base - offsetTop >= hours_height) {
+        // 会有误差出现
+        // startTime: dateText + " " + this.computeTimeByTop(top),
+        // endTime: dateText + " " + this.computeTimeByTop(hours_height + top),
+        // 干脆直接，堪比干脆面
+        obj.startTime = (function () {
+          let hours = timeRangeStart + index;
+          return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
+        })();
+        obj.endTime = (function () {
+          let hours = timeRangeStart + index + 1;
+          return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
+        })()
+      } else {
+        obj.startTime = `${dateText} ${this.computeTimeByTop(base - hours_height)}`;
+        obj.endTime = `${dateText} ${this.computeTimeByTop(base)}`
+      }
+      this.table[tlIndex].selectBlock.push(new SelectBlock(obj, this));
       // let currentTime = new Date();
       // currentTime.setHours(currentTime.getHours() + within_hours); // 当前时间的12小时后
 
@@ -1042,7 +1021,7 @@ export default {
     },
   },
 
-  created() {},
+  created() { },
   mounted() {
     this.load();
   },
@@ -1065,24 +1044,29 @@ $BDC: #e8e8e8;
   border-radius: 10px;
   background-color: #ffffff;
   user-select: none;
+
   // 时间戳
   .timestamp {
     width: 40px;
     height: 100%;
     display: flex;
     flex-direction: column;
+
     .thead {
       flex: 1;
     }
+
     .tbody {
       flex: 13;
       display: flex;
       flex-direction: column;
     }
+
     .td {
       position: relative;
       flex: 1;
     }
+
     .time {
       color: #ccc;
       font-size: 20px;
@@ -1092,6 +1076,7 @@ $BDC: #e8e8e8;
       transform: translate(-50%, -50%);
     }
   }
+
   // 时间戳 END
 
   .table {
@@ -1099,12 +1084,14 @@ $BDC: #e8e8e8;
     height: 100%;
     overflow: hidden;
     display: flex;
+
     .tl {
       flex: 1;
       height: 100%;
       display: flex;
       flex-direction: column;
       border-left: 1px solid $BDC;
+
       .thead {
         flex: 1;
         display: flex;
@@ -1114,6 +1101,7 @@ $BDC: #e8e8e8;
         font-size: 14px;
         text-align: center;
       }
+
       .tbody {
         flex: 13;
         display: flex;
@@ -1121,6 +1109,7 @@ $BDC: #e8e8e8;
         position: relative;
         z-index: 1;
         overflow: hidden;
+
         .td {
           width: 100%;
           flex: 1;
@@ -1133,6 +1122,7 @@ $BDC: #e8e8e8;
           overflow: hidden;
           background: linear-gradient(#ff00bb80, #cccccc80);
           user-select: none;
+
           .content {
             font-size: 14px;
             text-align: center;
@@ -1152,24 +1142,28 @@ $BDC: #e8e8e8;
           border-radius: 6px;
           color: #fff;
           font-size: 20px;
+
           &.green {
             background-color: #18d78b;
           }
+
           &.blue {
             background-color: #2bbff8;
           }
+
           &.yellow {
             background-color: #ffb200;
           }
+
           &.red {
             background-color: #fa615c;
           }
+
           &.grey {
             background-color: #cccccc;
           }
 
-          .text {
-          }
+          .text {}
         }
 
         // 选择块
@@ -1185,6 +1179,7 @@ $BDC: #e8e8e8;
           flex-direction: column;
           justify-content: space-between;
           overflow: hidden;
+
           .top_arrow,
           .bottom_arrow {
             height: 12px;
@@ -1194,6 +1189,7 @@ $BDC: #e8e8e8;
             display: none;
             justify-content: center;
             align-items: center;
+
             .arrow {
               width: 5px;
               height: 5px;
@@ -1204,17 +1200,21 @@ $BDC: #e8e8e8;
               // line-height: 12px;
             }
           }
+
           .bottom_arrow {
             .arrow {
               transform: rotate(225deg);
             }
           }
+
           &:hover {
+
             .top_arrow,
             .bottom_arrow {
               display: flex;
             }
           }
+
           .show-time {
             flex: 1;
             overflow: hidden;
@@ -1223,12 +1223,14 @@ $BDC: #e8e8e8;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
+
             .icon {
               line-height: 12px;
               text-align: center;
             }
           }
         }
+
         // 供选择块
         .assign {
           width: 100%;
@@ -1247,11 +1249,13 @@ $BDC: #e8e8e8;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+
             .top_arrow,
             .bottom_arrow {
               width: 100%;
               text-align: center;
               position: relative;
+
               .time {
                 position: absolute;
                 left: -50px;
@@ -1259,14 +1263,17 @@ $BDC: #e8e8e8;
                 color: #333333;
               }
             }
+
             .bottom_arrow {
               .icon-jiantou {
                 transform: rotate(180deg);
               }
             }
+
             .icon-jiantou {
               background-color: rgba(0, 0, 0, 0.1);
             }
+
             .show-time {
               margin: 5px 0;
               height: 100%;
@@ -1274,10 +1281,12 @@ $BDC: #e8e8e8;
               flex-direction: column;
               align-items: center;
               justify-content: space-between;
+
               .icon {
                 text-align: center;
               }
             }
+
             .icon-cuo2 {
               position: absolute;
               top: -20px;

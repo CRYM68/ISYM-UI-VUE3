@@ -10,9 +10,9 @@ const sheduleAttrs = reactive({
         // endDate: "", // 结束日期
         days: 7, // 显示天数
         timeRange: [7, 23], // 时间范围
-        select: false,
+        select: true,
         // 选择模式下，选择块是否可以覆盖其他类型块
-        selectCover: true,
+        selectCover: false,
         // 选择块数量限制
         selectNumberRestrict: -1,
   }
