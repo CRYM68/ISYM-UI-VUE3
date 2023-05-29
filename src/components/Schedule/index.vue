@@ -92,7 +92,6 @@
             </div>
             <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
 
-           
             <!-- v-if="!(targetIndex[0] === index && targetIndex[1] === i)" -->
           </div>
 
@@ -170,10 +169,22 @@ let within_hours = 0;
 let min_time = 1;
 
 const Block = function (target, that) {
-  console.log(target);
+  this.startTimeDateObject = new Date(target.startTime);
+  if (this.startTimeDateObject.toString() === "Invalid Date")
+    throw new Error("Invalid startTime");
+  this.endTimeDateObject = new Date(target.endTime);
+  if (this.endTimeDateObject.toString() === "Invalid Date")
+    throw new Error("Invalid endTime");
+  if (this.endTimeDateObject < this.startTimeDateObject)
+    throw new Error("Invalid data.The end time should be longer than the start time");
+  if (
+    this.endTimeDateObject.getFullYear() !== this.startTimeDateObject.getFullYear() ||
+    this.endTimeDateObject.getMonth() !== this.startTimeDateObject.getMonth() ||
+    this.endTimeDateObject.getDate() !== this.startTimeDateObject.getDate()
+  )
+    throw new Error("Invalid data.The start time and end time should be the same day");
   let height = (start, end) =>
     Math.floor((end - start) / 60000) * (hours_height / 60);
-
   // 计算以tboby为父元素的top
   let top = function (start) {
     const timeRangeStart = that.tableAttrs.timeRange[0];
@@ -181,8 +192,6 @@ const Block = function (target, that) {
     return (distanceHours * 60 + start.getMinutes()) * (hours_height / 60);
   };
   this.content = target.content || "无名"; // 课程名称（模块名称)
-  this.startTimeDateObject = new Date(target.startTime);
-  this.endTimeDateObject = new Date(target.endTime);
   this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
   this.endTimeText = this.endTimeDateObject.formatTime("HH:MM");
   this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
@@ -193,7 +202,7 @@ const Block = function (target, that) {
 class SelectBlock extends Block {
   constructor(target, that, index) {
     super(target, that);
-    const { roof, base } = that.computeRootAndBase(this, index)
+    const { roof, base } = that.computeRootAndBase(this, index);
     this.roof = roof;
     this.base = base;
   }
@@ -201,21 +210,37 @@ class SelectBlock extends Block {
 
 export default {
   props: {
-    tableAttrs: {
-      default: {
-        startDate: new Date(), // 开始日期
-        // 结束日期与显示天数有一个就行
-        endDate: "", // 结束日期
-        days: 9, // 显示天数
-        timeRange: [7, 23], // 时间范围
-        select: true,
-        // 选择模式下，选择块是否可以覆盖其他类型块
-        selectCover: false
+    tableConfig: {
+      type: Object,
+      validator: function (value) {
+        for (const key in value) {
+          const target = value[key];
+          switch (key) {
+            case "startDate":
+              if (
+                !(
+                  target instanceof Date ||
+                  new Date(target).toString() == "Invalid Date"
+                )
+              )
+                return false;
+              break;
+            case "days":
+            case "selectNumberRestrict":
+              if (!(typeof target === "number")) return false;
+              break;
+            case "timeRange":
+              if (!(0 < target[0] && target[0] < target[1] && target[1] < 24))
+                return false;
+              break;
+            case "select":
+            case "selectCover":
+              if (!(typeof target === "boolean")) return false;
+              break;
+          }
+        }
+        return true;
       },
-    },
-
-    color: {
-      default: "#000000",
     },
 
     data: {
@@ -223,7 +248,12 @@ export default {
       default: [
         {
           content: "语文", // 显示内容
-          startTime: "2023/05/27 09:00", // 开始时间
+          startTime: new Date(), // 开始时间
+          endTime: new Date(Date.now() + 2 * 60 * 60 *1000), // 结束时间
+        },
+        {
+          content: "Error", // 显示内容
+          startTime: "jkl", // 开始时间
           endTime: "2023/05/27 12:00", // 结束时间
         },
         {
@@ -252,26 +282,6 @@ export default {
           endTime: "2023/05/31 20:00", // 结束时间
         },
       ],
-    },
-
-    time: {
-      type: String,
-      default: null,
-    },
-    // 课表展示对象的id
-    // targetId: {
-    // default: uni.getStorageSync('userId')
-    // },
-    // 课表类型 1 学员 2 教师
-    type: {
-      type: Number,
-      default: 1,
-    },
-
-    // 选择模式
-    select: {
-      type: Boolean,
-      default: false,
     },
 
     // 选择块数量限制
@@ -312,60 +322,28 @@ export default {
 
   data() {
     return {
-      table: [
-        // // 主渲染变量
-        // {
-        //   day: "27",
-        //   date: "27",
-        //   // 原来课程
-        //   plan: [
-        //     {
-        //       id: "", // 数据id
-        //       courseName: "你好世界", // 课程名称（模块名称）
-        //       height: 100, // 个体高度
-        //       top: "", // 与顶部距离
-        //       state: "", // 是否有老师接单（ 学生与讲师数据结构有差异 ）
-        //       status: "", // 状态
-        //     },
-        //   ],
-        //   // 选择块
-        //   select: [
-        //     // 一个选择块必有参数
-        //     {
-        //       height: 0,
-        //       top: 0,
-        //       startTime: "",
-        //       endTime: "",
-        //     },
-        //   ],
-        //   // 供选择块
-        //   assign: [
-        //     // 一个供选择块必有参数
-        //     {
-        //       // 一个供选择中的选择快必有参数
-        //       selected_time: {
-        //         top: "",
-        //         height: "",
-        //         startTime: "",
-        //         endTime: "",
-        //       },
-        //     },
-        //   ],
-        // },
-      ],
-
-      // 关于时间选择的一些参数
-      targetIndex: null,
-
-      // 小时高度
-      timestampItemHeight: 0,
-
-      // 解决视图不更新问题
-      update: false,
+      table: [],
     };
   },
 
   computed: {
+    tableAttrs() {
+      return Object.assign(
+        {
+          startDate: new Date(), // 开始日期
+          // 结束日期与显示天数有一个就行
+          // endDate: "", // 结束日期
+          days: 7, // 显示天数
+          timeRange: [7, 23], // 时间范围
+          select: true,
+          // 选择模式下，选择块是否可以覆盖其他类型块
+          selectCover: false,
+          // 选择块数量限制
+          selectNumberRestrict: -1,
+        },
+        this.tableConfig
+      );
+    },
     timestamp() {
       const [start, end] = this.tableAttrs.timeRange;
       const stamp = [];
@@ -432,17 +410,18 @@ export default {
 
     // 计算一个时间块的上限下限位置
     computeRootAndBase(block, index) {
-      console.log('block', block, index);
+      console.log("block", block, index);
       // 上方元素的底部top（元素的最大顶部top，下方元素的顶部top（元素底部最大top）
-      let roof = 0, base = tbody;
-      if(this.tableAttrs.selectCover) return { roof, base };
-      const tl = this.table[index]
+      let roof = 0,
+        base = tbody;
+      if (this.tableAttrs.selectCover) return { roof, base };
+      const tl = this.table[index];
       // 总计此tl上的selectblock与block
       let target = tl.block.concat(tl.selectBlock);
 
       // 块的默认顶部底部位置
       let blockRoof = block.top,
-          blockBase = block.top + block.height;
+        blockBase = block.top + block.height;
       target.forEach((item) => {
         // 该块的顶部与底部top
         let itemRoof = item.top,
@@ -468,7 +447,7 @@ export default {
       // }
       return { roof, base };
     },
-    
+
     // 根据时间块时间计算时间块高度
     computeTopByTime(time) {
       // 根据时间计算高度
@@ -489,10 +468,10 @@ export default {
       // 根据top(与tbody的距离)计算时间
       // console.log('top', top);
       // 极限值判断
-      if(top === tbody) {
+      if (top === tbody) {
         let hours = this.tableAttrs.timeRange[1] + 1;
-        if(hours === 24) hours = 0;
-        return (hours < 10 ? "0" + hours : hours) + ':' + '00'
+        if (hours === 24) hours = 0;
+        return (hours < 10 ? "0" + hours : hours) + ":" + "00";
       }
       const timeRangeStart = this.tableAttrs.timeRange[0];
       const totalMinute = (top * 60) / hours_height; // 总分钟数
@@ -510,8 +489,7 @@ export default {
       // if (minute === 60) {
       //   (hours += 1), (minute = 0);
       // }
-      
-      
+
       return (
         (hours < 10 ? "0" + hours : hours) +
         ":" +
@@ -525,30 +503,30 @@ export default {
 
     // 添加普通选择块
     appendSelectBlock(event, tlIndex, index) {
-      console.log("appendSelectBlock", event, tlIndex);
       if (!this.tableAttrs.select) return; // 是否开启选择模式
       let top = event.target.offsetTop; // 点击元素与tbody距离
       const dateText = this.table[tlIndex].dateText;
-      const timeRangeStart = this.tableAttrs.timeRange[0]
+      const timeRangeStart = this.tableAttrs.timeRange[0];
       let obj = new SelectBlock(
         {
           // 会有误差出现
           // startTime: dateText + " " + this.computeTimeByTop(top),
           // endTime: dateText + " " + this.computeTimeByTop(hours_height + top),
-          startTime: (function(){
+          startTime: (function () {
             let hours = timeRangeStart + index;
-            return `${dateText} ${(hours < 10 ? "0" + hours : hours)}:00`;
+            return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
           })(),
 
-          endTime: (function(){
+          endTime: (function () {
             let hours = timeRangeStart + index + 1;
-            return `${dateText} ${(hours < 10 ? "0" + hours : hours)}:00`;
+            return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
           })(),
         },
-        this, tlIndex
+        this,
+        tlIndex
       );
       // let {roof, base} = this.computeRootAndBase()
-      this.table[tlIndex].selectBlock.push(obj)
+      this.table[tlIndex].selectBlock.push(obj);
       // let currentTime = new Date();
       // currentTime.setHours(currentTime.getHours() + within_hours); // 当前时间的12小时后
 
@@ -654,9 +632,9 @@ export default {
       let top = target.top - change;
       let limitTop = target.top + target.height - hours_height;
       if (top < target.roof) {
-        top = target.roof
+        top = target.roof;
         height = target.height + target.top - target.roof;
-        console.log('height', height);
+        console.log("height", height);
       } else if (top > limitTop) top = limitTop;
 
       if (height <= hours_height) {
@@ -965,10 +943,14 @@ export default {
       // };
 
       this.data.forEach((item) => {
-        item = Object.assign(item, new Block(item, this));
-        this.table.forEach((e) => {
-          if (e.dateText === item.dateText) e.block.push(item);
-        });
+        try {
+          item = Object.assign(item, new Block(item, this));
+          this.table.forEach((e) => {
+            if (e.dateText === item.dateText) e.block.push(item);
+          });
+        } catch (err) {
+          console.error(err);
+        }
       });
       console.log("data", this.data, this.table);
       // }
@@ -1027,7 +1009,7 @@ export default {
         this.dateText = date.formatTime("YYYY/MM/DD");
         // 便面后面push数据报错，这里先定义
         this.block = [];
-        if(select) this.selectBlock = [];
+        if (select) this.selectBlock = [];
         // this.assign = [];
         this.dayText = date.getDayText("周");
       };
@@ -1048,12 +1030,14 @@ export default {
       this.$nextTick(() => {
         tbody = document.querySelector("#tbody").offsetHeight;
         // hours_height = document.querySelector("#td").offsetHeight;
-        hours_height = tbody / (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0] + 1);
-      // 移动过程中小数误差很小没人在意，但是在极点和生成块的时候，可时间手动去掉误差
-        console.dir(document.querySelector("#td") );
+        hours_height =
+          tbody /
+          (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0] + 1);
+        // 移动过程中小数误差很小没人在意，但是在极点和生成块的时候，可时间手动去掉误差
+        console.dir(document.querySelector("#td"));
         console.dir(document.querySelector("#tbody"));
         this.computeBlock();
-        console.table('hoursHeight',hours_height);
+        console.table("hoursHeight", hours_height);
       });
     },
   },
@@ -1076,7 +1060,7 @@ $BDC: #e8e8e8;
   display: flex;
   // height: 994px;
   width: 750px;
-  height: 440px;
+  height: 100%;
   border: 1px solid $BDC;
   border-radius: 10px;
   background-color: #ffffff;
@@ -1136,6 +1120,7 @@ $BDC: #e8e8e8;
         flex-direction: column;
         position: relative;
         z-index: 1;
+        overflow: hidden;
         .td {
           width: 100%;
           flex: 1;
@@ -1145,6 +1130,7 @@ $BDC: #e8e8e8;
         .block {
           position: absolute;
           left: 0;
+          overflow: hidden;
           background: linear-gradient(#ff00bb80, #cccccc80);
           user-select: none;
           .content {
@@ -1195,19 +1181,17 @@ $BDC: #e8e8e8;
           border-radius: 6px;
           background-color: #2bbff8;
           opacity: 0.7;
-          overflow: hidden;
-          // color: #fff;
-          // font-size: 20px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          overflow: hidden;
           .top_arrow,
           .bottom_arrow {
             height: 12px;
             background: #2ffff880;
             text-align: center;
             flex-shrink: 0;
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             .arrow {
@@ -1225,13 +1209,15 @@ $BDC: #e8e8e8;
               transform: rotate(225deg);
             }
           }
-          // .icon-jiantou {
-          //   background-color: rgba(0, 0, 0, 0.1);
-          // }
+          &:hover {
+            .top_arrow,
+            .bottom_arrow {
+              display: flex;
+            }
+          }
           .show-time {
             flex: 1;
             overflow: hidden;
-            margin: 5px 0;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -1242,15 +1228,7 @@ $BDC: #e8e8e8;
               text-align: center;
             }
           }
-          // .icon-cuo2 {
-          //   position: absolute;
-          //   top: -20px;
-          //   left: -20px;
-          //   z-index: 9;
-          //   color: #333333;
-          // }
         }
-
         // 供选择块
         .assign {
           width: 100%;
