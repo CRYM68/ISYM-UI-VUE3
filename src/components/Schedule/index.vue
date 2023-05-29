@@ -18,16 +18,26 @@
           <text class="th center">{{ item.days }}日</text>
         </div>
         <div class="tbody" id="tbody" ref="tbody">
-          <div class="td center" v-for="(item, index) in timestamp.length" :key="index" id="td"
-            @click="appendSelectBlock($event, tlIndex, index)"></div>
+          <div
+            class="td center"
+            v-for="(item, index) in timestamp.length"
+            :key="index"
+            id="td"
+            @click="appendSelectBlock($event, tlIndex, index)"
+          ></div>
           <!-- 块 -->
           <!-- 纯展示 -->
 
-          <div v-for="(blockItem, i) in item.block" :class="['block', 'class', 'center']" :key="i" :style="{
-            height: blockItem.height + 'px',
-            top: blockItem.top + 'px',
-            'z-index': 2,
-          }">
+          <div
+            v-for="(blockItem, i) in item.block"
+            :class="['block', 'class', 'center']"
+            :key="i"
+            :style="{
+              height: blockItem.height + 'px',
+              top: blockItem.top + 'px',
+              'z-index': 2,
+            }"
+          >
             <div class="content">
               <div>{{ blockItem.content }}</div>
               <div>
@@ -37,15 +47,29 @@
           </div>
 
           <!-- 选择块 select -->
-          <div v-for="(item_1, i) in item.selectBlock || []" :class="['select', 'center']" :key="i" :style="{
-            height: item_1.height + 'px',
-            top: item_1.top + 'px',
-          }" @click.stop="target([tlIndex, i])" @mousedown.stop="start($event, [tlIndex, i])"
-            @mousemove.stop="move($event, tlIndex, i)" @mouseup.stop="end" @mouseleave="end"
-            @longpress="remove(1, tlIndex, i)">
+          <div
+            v-for="(item_1, i) in item.selectBlock || []"
+            :class="['select', 'center']"
+            :key="i"
+            :style="{
+              height: item_1.height + 'px',
+              top: item_1.top + 'px',
+            }"
+            @click.stop="target([tlIndex, i])"
+            @mousedown.stop="start($event, item_1, tlIndex)"
+            @mousemove.stop="move($event, tlIndex, i)"
+            @mouseup.stop="end($event, item_1)"
+            @mouseleave="end($event, item_1)"
+            @longpress="remove(1, tlIndex, i)"
+          >
             <!-- 上移箭头 -->
-            <div class="top_arrow" @mousedown.stop="_start" @mousemove.stop="top_move($event, tlIndex, i)"
-              @mouseup.stop="end" @mouseleave="end">
+            <div
+              class="top_arrow"
+              @mousedown.stop="start($event, item_1, tlIndex)"
+              @mousemove.stop="top_move($event, tlIndex, i)"
+              @mouseup.stop="end($event, item_1)"
+              @mouseleave="end($event, item_1)"
+            >
               <div class="arrow"></div>
             </div>
 
@@ -57,8 +81,13 @@
             </div>
 
             <!-- 下移箭头 -->
-            <div class="bottom_arrow" @mousedown.stop="_start" @mousemove="bottom_move($event, tlIndex, i)" @mouseup="end"
-              @mouseleave="end">
+            <div
+              class="bottom_arrow"
+              @mousedown.stop="start($event, item_1, tlIndex)"
+              @mousemove="bottom_move($event, tlIndex, i)"
+              @mouseup="end($event, item_1)"
+              @mouseleave="end($event, item_1)"
+            >
               <div class="arrow"></div>
             </div>
             <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
@@ -143,13 +172,19 @@ const Block = function (target, that, check = true) {
     if (this.endTimeDateObject.toString() === "Invalid Date")
       throw new Error("Invalid endTime");
     if (this.endTimeDateObject < this.startTimeDateObject)
-      throw new Error("Invalid data.The end time should be longer than the start time");
+      throw new Error(
+        "Invalid data.The end time should be longer than the start time"
+      );
     if (
-      this.endTimeDateObject.getFullYear() !== this.startTimeDateObject.getFullYear() ||
-      this.endTimeDateObject.getMonth() !== this.startTimeDateObject.getMonth() ||
+      this.endTimeDateObject.getFullYear() !==
+        this.startTimeDateObject.getFullYear() ||
+      this.endTimeDateObject.getMonth() !==
+        this.startTimeDateObject.getMonth() ||
       this.endTimeDateObject.getDate() !== this.startTimeDateObject.getDate()
     )
-      throw new Error("Invalid data.The start time and end time should be the same day");
+      throw new Error(
+        "Invalid data.The start time and end time should be the same day"
+      );
   }
   let height = (start, end) =>
     Math.floor((end - start) / 60000) * (hours_height / 60);
@@ -159,7 +194,7 @@ const Block = function (target, that, check = true) {
     let distanceHours = start.getHours() - timeRangeStart;
     return (distanceHours * 60 + start.getMinutes()) * (hours_height / 60);
   };
-  this.content = target.content || ''; // 课程名称（模块名称)
+  this.content = target.content || ""; // 课程名称（模块名称)
   this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
   this.endTimeText = this.endTimeDateObject.formatTime("HH:MM");
   this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
@@ -172,7 +207,6 @@ class SelectBlock extends Block {
     super(target, that);
     this.roof = target.roof;
     this.base = target.base;
-
   }
 }
 
@@ -415,6 +449,8 @@ export default {
       // if (+currentTime > +roof_Time) {
       //   roof = this.computeTopByTime(+currentTime);
       // }
+      block.roof = roof;
+      block.base = base;
       return { roof, base };
     },
 
@@ -479,13 +515,16 @@ export default {
       const dateText = this.table[tlIndex].dateText;
       const timeRangeStart = this.tableAttrs.timeRange[0];
       console.log(top);
-      const { roof, base } = this.computeRootAndBase({ top, height: 0 }, tlIndex);
+      const { roof, base } = this.computeRootAndBase(
+        { top, height: 0 },
+        tlIndex
+      );
       console.log(roof, base);
       if (base - roof < hours_height) {
-        window.alert('该时间段不足以生成选择快')
+        window.alert("该时间段不足以生成选择快");
         return;
       }
-      let obj = { roof, base }
+      let obj = { roof, base };
       let offsetTop = event.target.offsetTop;
       // 如果点击到的td有足够的高度
       if (base - offsetTop >= hours_height) {
@@ -500,10 +539,12 @@ export default {
         obj.endTime = (function () {
           let hours = timeRangeStart + index + 1;
           return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
-        })()
+        })();
       } else {
-        obj.startTime = `${dateText} ${this.computeTimeByTop(base - hours_height)}`;
-        obj.endTime = `${dateText} ${this.computeTimeByTop(base)}`
+        obj.startTime = `${dateText} ${this.computeTimeByTop(
+          base - hours_height
+        )}`;
+        obj.endTime = `${dateText} ${this.computeTimeByTop(base)}`;
       }
       this.table[tlIndex].selectBlock.push(new SelectBlock(obj, this));
       // let currentTime = new Date();
@@ -579,10 +620,10 @@ export default {
       // this.targetIndex = [index, this.seven[index].select.length - 1];
     },
 
-    _start(event) {
-      mouseDown = true;
-      start = event.pageY;
-    },
+    // _start(event) {
+    //   mouseDown = true;
+    //   start = event.pageY;
+    // },
 
     // 选择块的下箭头移动
     bottom_move(event, index, i) {
@@ -631,17 +672,12 @@ export default {
       this.targetIndex = index;
     },
 
-    start(event, index) {
+    start(event, item, tlIndex) {
       mouseDown = true;
-      console.log("start", event, index, mouseDown);
+      // console.log("start", event, index, mouseDown);
       // 记录开始位置
       start = event.pageY;
-      // let result = this.computeRootAndBase(
-      //   this.seven[index[0]].select[index[1]],
-      //   index[0]
-      // );
-      // this.seven[index[0]].select[index[1]].roof = result.roof;
-      // this.seven[index[0]].select[index[1]].base = result.base;
+      this.computeRootAndBase(item, tlIndex);
     },
 
     move(event, index, i) {
@@ -649,10 +685,8 @@ export default {
       // console.log('move', event, index, i);
       let target = this.table[index].selectBlock[i];
       let top = event.pageY - start + target.top; // 移动后，顶部距离tbody距离
-      console.log(top, target);
       if (top < target.roof) {
         top = target.roof;
-        console.log("top", top);
       } else if (target.base - target.height < top) {
         top = target.base - target.height;
       }
@@ -663,12 +697,14 @@ export default {
       start = event.pageY;
     },
 
-    end(event) {
+    end(event, item) {
       if (!mouseDown) return;
       mouseDown = false;
       console.log("end", event);
       // 停止移动，位置记录清空
       start = 0;
+      item.startTimeDateObject = new Date(item.dateText + ' ' + item.startTimeText)
+      item.endTimeDateObject = new Date(item.dateText + ' ' + item.endTimeText)
     },
 
     /**
@@ -1021,7 +1057,7 @@ export default {
     },
   },
 
-  created() { },
+  created() {},
   mounted() {
     this.load();
   },
@@ -1163,7 +1199,8 @@ $BDC: #e8e8e8;
             background-color: #cccccc;
           }
 
-          .text {}
+          .text {
+          }
         }
 
         // 选择块
@@ -1208,7 +1245,6 @@ $BDC: #e8e8e8;
           }
 
           &:hover {
-
             .top_arrow,
             .bottom_arrow {
               display: flex;
