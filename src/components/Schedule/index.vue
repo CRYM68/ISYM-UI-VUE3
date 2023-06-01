@@ -17,7 +17,7 @@
           <text class="th center">{{ item.dayText }}</text>
           <text class="th center">{{ item.days }}日</text>
         </div>
-        <div class="tbody" id="tbody" ref="tbody">
+        <div class="tbody" id="tbody">
           <div
             class="td center"
             v-for="(item, index) in timestamp.length"
@@ -244,6 +244,11 @@ export default {
         return true;
       },
     },
+    // 双向绑定选择块数据
+    selectData: {
+      type: Array,
+      default: []
+    },
 
     data: {
       type: Array,
@@ -321,9 +326,11 @@ export default {
       default: false,
     },
   },
+  emits: ['update:selectData'],
 
   data() {
     return {
+      a: 1,
       table: [],
     };
   },
@@ -354,6 +361,15 @@ export default {
       }
       return stamp;
     },
+  },
+  watch: {
+    table: {
+      handler(newVal){
+        console.log(newVal);
+        this.$emit('update:selectData', newVal.reduce((acc, e) => acc.concat(e.selectBlock), []))
+      },
+      deep: true
+    }
   },
 
   methods: {

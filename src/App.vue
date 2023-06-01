@@ -15,8 +15,10 @@ const sheduleAttrs = reactive({
         selectCover: false,
         // 选择块数量限制
         selectNumberRestrict: -1,
-  }
+  },
+  selectData: []
 })
+
 
 </script>
 
@@ -26,7 +28,7 @@ const sheduleAttrs = reactive({
   </header>
  
   <main>
-    <Schedule v-bind="sheduleAttrs" class="schedule" />
+    <Schedule v-bind="sheduleAttrs" class="schedule" v-model:select-data="sheduleAttrs.selectData" />
   </main>
 </template>
 
