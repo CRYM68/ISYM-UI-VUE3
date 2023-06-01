@@ -11,16 +11,19 @@
     </div>
     <!-- 时间戳 END -->
     <!-- 表格 -->
-    <div 
+    <div
       class="table"
       @mousemove.stop="selectBlockMoveType"
       @mouseup.stop="end"
-      @mouseleave="end">
+      @mouseleave="end"
+    >
       <div class="tl" v-for="(item, tlIndex) of table" :key="tlIndex">
-        <div class="thead">
-          <text class="th center">{{ item.dayText }}</text>
-          <text class="th center">{{ item.days }}日</text>
-        </div>
+        <slot name="thead">
+          <div class="thead">
+            <text class="th center">{{ item.dayText }}</text>
+            <text class="th center">{{ item.days }}日</text>
+          </div>
+        </slot>
         <div class="tbody" id="tbody">
           <div
             class="td center"
@@ -59,7 +62,7 @@
               height: item_1.height + 'px',
               top: item_1.top + 'px',
             }"
-            @click.stop="target([tlIndex, i])"
+            @dblclick="removeSelectBlock(tlIndex, i)"
             @mousedown.stop="start($event, item_1, tlIndex, 'block')"
             @longpress="remove(1, tlIndex, i)"
           >
@@ -85,45 +88,7 @@
             >
               <div class="arrow"></div>
             </div>
-            <!-- v-if="targetIndex[0] === index && targetIndex[1] === i" -->
-
-            <!-- v-if="!(targetIndex[0] === index && targetIndex[1] === i)" -->
           </div>
-
-          <!-- 供时间段块 assign -->
-          <!-- <div
-						v-if="assign"
-						v-for="(item_1, index_1) of item.assign"
-						:key="index_1"
-						:class="['assign', 'center']"
-						:style="{
-							height: item_1.height + 'px',
-							top: item_1.top + 'px'
-						}"
-						@tap.stop="appendTimeBlock($event, index, index_1)" >
-						<div
-							class="selected_time center"
-							:style="{
-								height: item_1.selected_time.height + 'px',
-								top: item_1.selected_time.top + 'px'
-							}"
-							@touchstart="time_start"
-							@touchmove.stop="time_move($event, index, index_1)"
-							@touchend="end"
-							@longpress="remove(2, index, index_1)"
-							v-if="item_1.selected_time"
-						>
-							<div class="top_arrow" @touchstart.stop="_start" @touchmove.stop="time_top_move($event, index, index_1)" @touchend.stop="end">
-								<div class="iconfont icon-jiantou"></div>
-								<div class="time">{{ item_1.selected_time.startTime }}</div>
-							</div>
-							已选时间
-							<div class="bottom_arrow" @touchstart.stop="_start" @touchmove.stop="time_bottom_move($event, index, index_1)" @touchend.stop="end">
-								<div class="iconfont icon-jiantou"></div>
-								<div class="time">{{ item_1.selected_time.endTime }}</div>
-							</div>
-						</div>
-					</div> -->
         </div>
       </div>
     </div>
@@ -145,22 +110,22 @@ let start;
 let mouseDown = false;
 
 // 选择块移动体验优化，当前操作的选择块数据
-let currentMoveSelectBlock = null
-let moveType = undefined
+let currentMoveSelectBlock = null;
+let moveType = undefined;
 
 // 代表已有选择块数量 ( 选择块计数器 )
-let number = 0;
+// let number = 0;
 
 // 供选择选择快中选择快数量 ( 计数器 )
-let assign_number = 0;
+// let assign_number = 0;
 
 // --- 限制项（linmit）
 
 // 距离当前时间多少小时才可以进行预约和时间选择
-let within_hours = 0;
+// let within_hours = 0;
 
 // 选择块最小时间（小时）
-let min_time = 1;
+// let min_time = 1;
 
 const Block = function (target, that, check = true) {
   this.startTimeDateObject = new Date(target.startTime);
@@ -246,7 +211,7 @@ export default {
     // 双向绑定选择块数据
     selectData: {
       type: Array,
-      default: []
+      default: [],
     },
 
     data: {
@@ -302,30 +267,13 @@ export default {
       default: [],
     },
 
-    // 供选择模式
-    assign: {
-      type: Boolean,
-    },
-
-    // 供选时间段数据
-    assign_times: {
-      type: Array,
-      default: [],
-    },
-
-    // 供选时间块上选择时间块的数量限制
-    assign_number: {
-      type: Number,
-      default: 1,
-    },
-
     // 预约指定教师状态（开启点击空闲进入预约教师页面功能）
     reservation: {
       type: Boolean,
       default: false,
     },
   },
-  emits: ['update:selectData'],
+  emits: ["update:selectData"],
 
   data() {
     return {
@@ -362,66 +310,20 @@ export default {
   },
   watch: {
     table: {
-      handler(newVal){
-        this.$emit('update:selectData', newVal.reduce((acc, e) => acc.concat(e.selectBlock), []))
+      handler(newVal) {
+        this.$emit(
+          "update:selectData",
+          newVal.reduce((acc, e) => acc.concat(e.selectBlock), [])
+        );
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
 
   methods: {
-    _tap(item) {
-      if (this.select || this.assign) return; // 选择状态不执行任何操作
-      console.log(item);
-      let { id, status } = item;
-      // 学生表
-      if (this.type === 1) {
-        // uni.navigateTo({
-        // 	url: !status ? `../../pages/task_edit/task_edit?id=${ id }` : `../../pages/course_detail/course_detail?classId=${ id }`
-        // });
-      }
-      // 教师表
-      else if (this.type === 2) {
-        if (this.reservation) {
-          // uni.navigateTo({
-          // 	url: '../../pages/task_create/task_create?type=3&teacherId=' + this.targetId
-          // })
-        } else {
-          console.log(status);
-          // uni.navigateTo({
-          // 	url: !status ? `../../pages/appointment/appointment` : `../../pages/course_detail/course_detail?classId=${ id }`
-          // });
-        }
-      }
-    },
-
     /**
      * 可操作块的计算与操作
      * */
-
-    // 移除可操作的时间块 1 select类型 2 assign类型
-    remove(type = 1, index, index_1) {
-      uni.showModal({
-        title: "是否移除该时间段",
-        success: (res) => {
-          if (res.confirm) {
-            // 1是普通选择块， 2是供选择时间上的选择块
-            switch (type) {
-              case 1:
-                this.seven[index].select.splice(index_1, 1);
-                number--;
-                break;
-              case 2:
-                delete this.seven[index].assign[index_1].selected_time;
-                assign_number--;
-                this.update = !this.update;
-                1;
-                break;
-            }
-          }
-        },
-      });
-    },
 
     // 计算一个时间块的上限下限位置
     computeRootAndBase(block, index) {
@@ -519,6 +421,10 @@ export default {
     /**
      * select 模式
      * */
+    // 移除可操作的时间块 1 select类型 2 assign类型
+    removeSelectBlock(tlIndex, index) {
+      this.table[tlIndex].selectBlock.splice(index, 1);
+    },
 
     // 添加普通选择块
     appendSelectBlock(event, tlIndex, index) {
@@ -527,12 +433,12 @@ export default {
       let top = event.target.offsetTop + event.offsetY; // 点击位置与tbody距离
       const dateText = this.table[tlIndex].dateText;
       const timeRangeStart = this.tableAttrs.timeRange[0];
-      console.log(top);
+
       const { roof, base } = this.computeRootAndBase(
         { top, height: 0 },
         tlIndex
       );
-      console.log(roof, base);
+      // 时间区间条件判断
       if (base - roof < hours_height) {
         window.alert("该时间段不足以生成选择快");
         return;
@@ -560,89 +466,20 @@ export default {
         obj.endTime = `${dateText} ${this.computeTimeByTop(base)}`;
       }
       this.table[tlIndex].selectBlock.push(new SelectBlock(obj, this));
-      // let currentTime = new Date();
-      // currentTime.setHours(currentTime.getHours() + within_hours); // 当前时间的12小时后
-
-      // let targetTime = new Date(
-      //   `${this.seven[index].date} ${this.computeTimeByTop(top)}`
-      // );
-      // if (+currentTime > +targetTime) {
-      //   uni.showToast({
-      //     title: `请选择距离当前时间${within_hours}小时外的时间`,
-      //     icon: "none",
-      //     duration: 2500,
-      //   });
-      //   return;
-      // }
-
-      // 选择块的限制区间计算
-      // let roof = 0, // 上方元素的底部top（元素的最大顶部top）
-      // 	base = tbody; // 下方元素的顶部top（元素底部最大top）
-      // let obj = {
-      //   height: hours_height,
-      //   top: hours_height * hours,
-      //   startTime: "",
-      //   endTime: "",
-      // };
-
-      // target.forEach(item => {
-      // 	let item_up = item.top,
-      // 		item_down = item.top + item.height;
-      // 	// console.log('循环块：' + item_up + ' ' + item_down);
-      // 	if (top < item_up && base > item_up) {
-      // 		// 再次元素上方(触摸点不可能在元素内，表面被块覆盖了)
-      // 		base = item_up;
-      // 	} else if (top > item_down && roof < item_down) {
-      // 		// 在此元素下方
-      // 		roof = item_down;
-      // 	}
-      // });
-      // let { roof, base } = this.computeRootAndBase(
-      //   { top: top, height: 0 },
-      //   index
-      // );
-      // if (base - roof < hours_height) {
-      //   // 区间小于一小时
-      //   uni.showToast({
-      //     title: "此区域可用时间不足1小时",
-      //     icon: "none",
-      //   });
-      //   return;
-      // }
-      // number++; // 选择块数量加一
-
-      // 点击的是不足一小时的格子
-      // if (roof > hours * hours_height) {
-      //   // 格子上方被部分占用被占用
-      //   obj.top += roof - hours * hours_height;
-      // } else if (base < (hours + 1) * hours_height) {
-      //   // 格子下方被部分占用被占用
-      //   obj.top -= (hours + 1) * hours_height - base;
-      // }
-
-      // let roof_Time = new Date(
-      //   `${this.seven[index].date} ${this.computeTimeByTop(roof)}`
-      // );
-      // if (+currentTime > +roof_Time) roof = this.computeTopByTime(+currentTime);
-
-      // obj.roof = roof;
-      // obj.base = base;
-      // obj.startTime = this.computeTimeByTop(obj.top);
-      // obj.endTime = this.computeTimeByTop(obj.top + obj.height);
-      // this.seven[index].select.push(obj);
-      // this.targetIndex = [index, this.seven[index].select.length - 1];
     },
 
-    // _start(event) {
-    //   mouseDown = true;
-    //   start = event.pageY;
-    // },
-
-    selectBlockMoveType(event, target){
-      switch(moveType){
-        case 'block': this.move(event, target); break;
-        case 'topArrow': this.top_move(event, target); break;
-        case 'bottomArrow': this.bottom_move(event, target); break;
+    // 选择块移动方式移动方式判断
+    selectBlockMoveType(event, target) {
+      switch (moveType) {
+        case "block":
+          this.move(event, target);
+          break;
+        case "topArrow":
+          this.top_move(event, target);
+          break;
+        case "bottomArrow":
+          this.bottom_move(event, target);
+          break;
       }
     },
 
@@ -685,11 +522,6 @@ export default {
       start = event.pageY;
     },
 
-    // 切换当前操作的目标选择块（普通）
-    target(index) {
-      this.targetIndex = index;
-    },
-
     start(event, item, tlIndex, mType) {
       mouseDown = true;
       currentMoveSelectBlock = item;
@@ -718,266 +550,21 @@ export default {
     end(event, item = currentMoveSelectBlock) {
       if (!mouseDown) return;
       // 移动速度较快时会导致move触发间隔被拉出较大距离
-      this.move(event)
+      this.move(event);
       // 停止移动，位置记录清空
       mouseDown = false;
       start = 0;
       currentMoveSelectBlock = null;
       // 更新数据
-      item.startTimeDateObject = new Date(item.dateText + ' ' + item.startTimeText)
-      item.endTimeDateObject = new Date(item.dateText + ' ' + item.endTimeText)
-    },
-
-    /**
-     * assign 模式
-     * */
-
-    // 添加供选择时间块上的选择时间块
-    appendTimeBlock(event, index, index_1) {
-      // console.log(event);
-      if (!this.assign) return;
-
-      // 添加小时块（教师选择学生的预约时间）
-      if (this.assign_number <= assign_number) {
-        // uni.showToast({
-        // 	title: `只能选择${this.assign_number}个时间段`,
-        // 	icon: 'none'
-        // });
-        return;
-      }
-      const query = uni.createSelectorQuery().in(this);
-      //获取#tbody上移高度与触摸点距离页面顶部距离
-      query
-        .select("#tbody")
-        .fields({ rect: true })
-        .selectdivport()
-        .scrollOffset()
-        .exec((res) => {
-          // 生成目标的数据列
-          let target = this.seven[index].assign[index_1];
-
-          let tbody_pageY = res[0].top + res[1].scrollTop;
-
-          let result = this.computeRootAndBase(
-            { top: event.touches[0].pageY - tbody_pageY, height: 0 },
-            index
-          );
-
-          let roof = 0,
-            base = target.height;
-
-          if (roof < result.roof - target.top) roof = result.roof - target.top;
-          if (base > result.base - target.top) base = result.base - target.top;
-
-          assign_number++; // 此位置符合条件，可以加一
-          let top =
-            event.touches[0].pageY -
-            tbody_pageY -
-            target.top -
-            hours_height / 2;
-          if (top < roof) {
-            top = roof;
-          } else if (top + hours_height > base) {
-            top = base - hours_height;
-          }
-          let block = {
-            top: top,
-            height: hours_height * min_time,
-            startTime: this.computeTimeByTop(top + target.top),
-            endTime: this.computeTimeByTop(top + hours_height + target.top),
-            roof: roof,
-            base: base,
-          };
-          target.selected_time = block;
-          this.update = !this.update;
-        });
-    },
-
-    time_move(event, index, index_1) {
-      // 当前目标快
-      let target = this.seven[index].assign[index_1].selected_time;
-
-      //
-      let top = target.top + event.touches[0].pageY - start;
-      if (top < target.roof) {
-        top = target.roof;
-      } else if (top > target.base - target.height) {
-        top = target.base - target.height;
-      }
-      target.top = top;
-      target.startTime = this.computeTimeByTop(
-        top + this.seven[index].assign[index_1].top
+      item.startTimeDateObject = new Date(
+        item.dateText + " " + item.startTimeText
       );
-      target.endTime = this.computeTimeByTop(
-        top + target.height + this.seven[index].assign[index_1].top
-      );
-      this.update = !this.update;
-      start = event.touches[0].pageY;
-    },
-
-    time_start(event) {
-      start = event.touches[0].pageY;
-    },
-
-    time_top_move(event, index, index_1) {
-      let target = this.seven[index].assign[index_1].selected_time;
-      // 该变量
-      let change = event.touches[0].pageY - start;
-      let top = target.top + change;
-      let height = target.height - change;
-
-      // 改变后top超出顶部限制
-      if (target.roof > top) {
-        top = target.roof;
-        height = target.height + target.top - target.roof;
-      }
-      // 改变后top超出底部限制
-      else if (top > target.top + target.height - hours_height * min_time) {
-        top = target.top + target.height - hours_height * min_time;
-        height = hours_height * min_time;
-      }
-      target.height = height;
-      target.top = top;
-      target.startTime = this.computeTimeByTop(
-        target.top + this.seven[index].assign[index_1].top
-      );
-      this.update = !this.update;
-      start = event.touches[0].pageY;
-    },
-
-    time_bottom_move(event, index, index_1) {
-      let target = this.seven[index].assign[index_1].selected_time;
-      let change = event.touches[0].pageY - start;
-      let height = target.height + change;
-      if (target.base < target.top + height) {
-        height = target.base - target.top;
-      } else if (height < hours_height) {
-        height = hours_height;
-      }
-      target.height = height;
-      target.endTime = this.computeTimeByTop(
-        target.top + height + this.seven[index].assign[index_1].top
-      );
-      this.update = !this.update;
-      start = event.touches[0].pageY;
-    },
-
-    /**
-     * 初始化课表等相关操作
-     * */
-
-    // 判断块的显示颜色( 学生的预约是绿色，老师的空闲是绿色 )
-    showColor(status, userType = 1) {
-      if (this.assign || this.select) {
-        return "grey";
-      } else {
-        if (userType === 1) {
-          switch (status) {
-            case 0:
-              return "green";
-              break;
-            case 1:
-            case 2:
-              return "blue";
-              break;
-            case 3:
-              return "yellow";
-              break;
-            case 4:
-              return "red";
-              break;
-            default:
-              return "grey";
-              break;
-          }
-        } else if (userType === 2) {
-          switch (status) {
-            case 0:
-              return "green";
-              break;
-            case 1:
-            case 2:
-              return "blue";
-              break;
-            case 3:
-              return "yellow";
-              break;
-            case 4:
-              return "red";
-              break;
-            default:
-              return "grey";
-              break;
-          }
-        }
-      }
+      item.endTimeDateObject = new Date(item.dateText + " " + item.endTimeText);
     },
 
     // 计算块信息（ 不会覆盖原有数据 ）
     computeBlock() {
       console.log("computeBlock", this.data);
-
-      // 计算块高度
-      // let height = (start, end) =>
-      //   Math.floor((end - start) / 60000) * (hours_height / 60);
-
-      // // 计算以tboby为父元素的top
-      // let top = function (start) {
-      //   const timeRangeStart = this.tableAttrs.timeRange[0];
-      //   let distanceHours = start.getHours() - timeRangeStart;
-      //   return (distanceHours * 60 + start.getMinutes()) * (hours_height / 60);
-      // };
-
-      // 计算select块
-      // if (type === "select") {
-      //   let select_block = function (target) {
-      //     this.top = top(target.startTime);
-      //     this.height = height(target.startTime, target.endTime);
-      //     this.startTime = target.startTime.match(/\d{2}:\d{2}$/)[0];
-      //     this.endTime = target.endTime.match(/\d{2}:\d{2}$/)[0];
-      //   };
-      //   data.forEach((item) => {
-      //     this.seven.forEach((item_1) => {
-      //       if (item_1.date === item.startTime.slice(0, 10)) {
-      //         item_1.select.push(new select_block(item));
-      //       }
-      //     });
-      //   });
-      // }
-
-      // 计算assign块
-      // else if (type === "assign") {
-      //   let assign_block = function (target) {
-      //     let start = new Date(target.startTime);
-      //     this.top =
-      //       (((start.getHours() - 8) * 60 + start.getMinutes()) *
-      //         hours_height) /
-      //       60;
-      //     this.height = height(target.startTime, target.endTime);
-      //   };
-      //   data.forEach((item) => {
-      //     this.seven.forEach((item_1) => {
-      //       if (item_1.date === item.startTime.slice(0, 10)) {
-      //         item_1.assign.push(new assign_block(item));
-      //       }
-      //     });
-      //   });
-      // }
-
-      // 计算plan块
-      // else {
-      // let block = function (target) {
-      //   console.log("target", target);
-      //   this.courseName = target.content || "无名"; // 课程名称（模块名称)
-      //   this.startTimeDateObject = new Date(target.startTime);
-      //   this.endTimeDateObject = new Date(target.endTime);
-      //   this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
-      //   this.endTimeText = this.endTimeDateObject.formatTime("HH:MM");
-      //   this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
-      //   this.top = top(this.startTimeDateObject);
-      //   this.height = height(this.startTimeDateObject, this.endTimeDateObject); // 个体高度
-      // };
-
       this.data.forEach((item) => {
         try {
           item = Object.assign(item, new Block(item, this));
@@ -989,49 +576,6 @@ export default {
         }
       });
       console.log("data", this.data, this.table);
-      // }
-    },
-
-    // 刷新课表数据
-    refresh(targetId = this.targetId) {
-      // 检查登录
-      // if( getStorageSync('token') ){
-      // 检查结构是否已生成， 防止外部调用刷新报错
-      if (this.seven.length !== 7) return;
-      console.log("结构生成", this.seven);
-      this.tableData.forEach((e) => this.computeBlock(e.block));
-      console.log(this.tableData);
-      // 先清空原有数据
-      // this.seven.forEach( item => item.plan = [] );
-
-      //   if (this.type === 1) {
-      // 学生类型
-      // 获取七天内所有课程和课程预约
-      // getStudentSchedule({
-      // 	userId: targetId || uni.getStorageSync('userId'),
-      // 	stime: this.seven[ 0 ].date + ' 00:00',
-      // 	etime: this.seven[ 6 ].date + ' 23:59'
-      // }).then(res => {
-      // this.computeStudentData( [] );
-      // });
-      //   } else if (this.type === 2) {
-      // 教师类型
-      // getTeacherSchedule({
-      // userId: targetId || uni.getStorageSync('userId')
-      // }).then(res => {
-      // let result = res.data.data || [];
-      // // 开启了选择模式或供选模式，要去除掉空闲时间
-      // if( this.assign || this.select ){
-      // 	result.forEach((item, index) => {
-      // 		if ( item.status === 0 ) result.splice(index, 1);
-      // 	});
-      // }
-      // // 块颜色显示处理
-      // result.forEach( item => item.showColor = this.showColor( item.status, 2 ) );
-      // this.computeBlock( result );
-      // });
-      // }
-      //   }
     },
 
     // 创建表格基础数据结构
@@ -1047,7 +591,7 @@ export default {
         this.block = [];
         if (select) this.selectBlock = [];
         // this.assign = [];
-        this.dayText = date.getDayText("周");
+        this.dayText = date.getDayText("星期");
       };
       this.table.push(new tl(startDate));
       if (days) {
@@ -1065,13 +609,10 @@ export default {
       this.createBaseConstruction();
       this.$nextTick(() => {
         tbody = document.querySelector("#tbody").offsetHeight;
-        // hours_height = document.querySelector("#td").offsetHeight;
         hours_height =
           tbody /
           (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0] + 1);
         // 移动过程中小数误差很小没人在意，但是在极点和生成块的时候，可时间手动去掉误差
-        console.dir(document.querySelector("#td"));
-        console.dir(document.querySelector("#tbody"));
         this.computeBlock();
         console.table("hoursHeight", hours_height);
       });
@@ -1083,8 +624,7 @@ export default {
     this.load();
   },
   unmounted() {
-    assign_number = 0;
-    number = 0;
+    // number = 0;
   },
 };
 </script>
@@ -1122,6 +662,7 @@ $BDC: #e8e8e8;
     .td {
       position: relative;
       flex: 1;
+      font-size: 12px;
     }
 
     .time {
@@ -1284,72 +825,6 @@ $BDC: #e8e8e8;
             .icon {
               line-height: 12px;
               text-align: center;
-            }
-          }
-        }
-
-        // 供选择块
-        .assign {
-          width: 100%;
-          border-radius: 6px;
-          background-color: #18d78b;
-          position: absolute;
-          left: 0;
-          color: #fff;
-          font-size: 20px;
-
-          .selected_time {
-            width: 100%;
-            position: absolute;
-            left: 0;
-            background-color: red;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-
-            .top_arrow,
-            .bottom_arrow {
-              width: 100%;
-              text-align: center;
-              position: relative;
-
-              .time {
-                position: absolute;
-                left: -50px;
-                top: 0;
-                color: #333333;
-              }
-            }
-
-            .bottom_arrow {
-              .icon-jiantou {
-                transform: rotate(180deg);
-              }
-            }
-
-            .icon-jiantou {
-              background-color: rgba(0, 0, 0, 0.1);
-            }
-
-            .show-time {
-              margin: 5px 0;
-              height: 100%;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: space-between;
-
-              .icon {
-                text-align: center;
-              }
-            }
-
-            .icon-cuo2 {
-              position: absolute;
-              top: -20px;
-              left: -20px;
-              z-index: 9;
-              color: #333333;
             }
           }
         }
