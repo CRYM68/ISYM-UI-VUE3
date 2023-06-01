@@ -11,7 +11,11 @@
     </div>
     <!-- 时间戳 END -->
     <!-- 表格 -->
-    <div class="table">
+    <div 
+      class="table"
+      @mousemove.stop="selectBlockMoveType"
+      @mouseup.stop="end"
+      @mouseleave="end">
       <div class="tl" v-for="(item, tlIndex) of table" :key="tlIndex">
         <div class="thead">
           <text class="th center">{{ item.dayText }}</text>
@@ -56,19 +60,13 @@
               top: item_1.top + 'px',
             }"
             @click.stop="target([tlIndex, i])"
-            @mousedown.stop="start($event, item_1, tlIndex)"
-            @mousemove.stop="move($event, tlIndex, i)"
-            @mouseup.stop="end($event, item_1)"
-            @mouseleave="end($event, item_1)"
+            @mousedown.stop="start($event, item_1, tlIndex, 'block')"
             @longpress="remove(1, tlIndex, i)"
           >
             <!-- 上移箭头 -->
             <div
               class="top_arrow"
-              @mousedown.stop="start($event, item_1, tlIndex)"
-              @mousemove.stop="top_move($event, tlIndex, i)"
-              @mouseup.stop="end($event, item_1)"
-              @mouseleave="end($event, item_1)"
+              @mousedown.stop="start($event, item_1, tlIndex, 'topArrow')"
             >
               <div class="arrow"></div>
             </div>
@@ -83,10 +81,7 @@
             <!-- 下移箭头 -->
             <div
               class="bottom_arrow"
-              @mousedown.stop="start($event, item_1, tlIndex)"
-              @mousemove="bottom_move($event, tlIndex, i)"
-              @mouseup="end($event, item_1)"
-              @mouseleave="end($event, item_1)"
+              @mousedown.stop="start($event, item_1, tlIndex, 'bottomArrow')"
             >
               <div class="arrow"></div>
             </div>
@@ -148,6 +143,10 @@ let tbody = 0;
 let start;
 // 鼠标是否按下
 let mouseDown = false;
+
+// 选择块移动体验优化，当前操作的选择块数据
+let currentMoveSelectBlock = null
+let moveType = undefined
 
 // 代表已有选择块数量 ( 选择块计数器 )
 let number = 0;
@@ -330,7 +329,6 @@ export default {
 
   data() {
     return {
-      a: 1,
       table: [],
     };
   },
@@ -365,7 +363,6 @@ export default {
   watch: {
     table: {
       handler(newVal){
-        console.log(newVal);
         this.$emit('update:selectData', newVal.reduce((acc, e) => acc.concat(e.selectBlock), []))
       },
       deep: true
@@ -641,10 +638,17 @@ export default {
     //   start = event.pageY;
     // },
 
+    selectBlockMoveType(event, target){
+      switch(moveType){
+        case 'block': this.move(event, target); break;
+        case 'topArrow': this.top_move(event, target); break;
+        case 'bottomArrow': this.bottom_move(event, target); break;
+      }
+    },
+
     // 选择块的下箭头移动
-    bottom_move(event, index, i) {
+    bottom_move(event, target = currentMoveSelectBlock) {
       if (!mouseDown) return;
-      let target = this.table[index].selectBlock[i];
       let change = event.pageY - start; // 正增负减
       let height = change + target.height; // height为最终高度
       if (height + target.top > target.base) {
@@ -660,9 +664,8 @@ export default {
     },
 
     // 选择块的上箭头移动
-    top_move(event, index, i) {
+    top_move(event, target = currentMoveSelectBlock) {
       if (!mouseDown) return;
-      let target = this.table[index].selectBlock[i];
       let change = start - event.pageY; // 正增负减
       let height = change + target.height;
       let top = target.top - change;
@@ -670,7 +673,6 @@ export default {
       if (top < target.roof) {
         top = target.roof;
         height = target.height + target.top - target.roof;
-        console.log("height", height);
       } else if (top > limitTop) top = limitTop;
 
       if (height <= hours_height) {
@@ -688,18 +690,18 @@ export default {
       this.targetIndex = index;
     },
 
-    start(event, item, tlIndex) {
+    start(event, item, tlIndex, mType) {
       mouseDown = true;
+      currentMoveSelectBlock = item;
+      moveType = mType;
       // console.log("start", event, index, mouseDown);
       // 记录开始位置
       start = event.pageY;
       this.computeRootAndBase(item, tlIndex);
     },
 
-    move(event, index, i) {
+    move(event, target = currentMoveSelectBlock) {
       if (!mouseDown) return;
-      // console.log('move', event, index, i);
-      let target = this.table[index].selectBlock[i];
       let top = event.pageY - start + target.top; // 移动后，顶部距离tbody距离
       if (top < target.roof) {
         top = target.roof;
@@ -713,12 +715,15 @@ export default {
       start = event.pageY;
     },
 
-    end(event, item) {
+    end(event, item = currentMoveSelectBlock) {
       if (!mouseDown) return;
-      mouseDown = false;
-      console.log("end", event);
+      // 移动速度较快时会导致move触发间隔被拉出较大距离
+      this.move(event)
       // 停止移动，位置记录清空
+      mouseDown = false;
       start = 0;
+      currentMoveSelectBlock = null;
+      // 更新数据
       item.startTimeDateObject = new Date(item.dateText + ' ' + item.startTimeText)
       item.endTimeDateObject = new Date(item.dateText + ' ' + item.endTimeText)
     },
