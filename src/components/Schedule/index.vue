@@ -143,19 +143,16 @@ const Block = function (target, that) {
     throw new Error(
       "Invalid data.The end time should be longer than the start time"
     );
-  if (
-    this.endTimeDateObject.getFullYear() !==
-      this.startTimeDateObject.getFullYear() ||
-    this.endTimeDateObject.getMonth() !== this.startTimeDateObject.getMonth() ||
-    this.endTimeDateObject.getDate() !== this.startTimeDateObject.getDate()
-  )
+    // 校验要考虑24：00的极限时间,开始时间不会更换日期
+  this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD"); 
+  if (this.endTimeDateObject - new Date(this.dateText) <= 24 * 60000 )
     throw new Error(
       "Invalid data.The start time and end time should be the same day"
     );
   this.content = target.content || ""; // 课程名称（模块名称)
   this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
   this.endTimeText = this.endTimeDateObject.formatTime("HH:MM");
-  this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
+  
   this.top = that.computeBlockTop(this.startTimeDateObject);
   this.height = that.computeBlockHeight(
     this.startTimeDateObject,
@@ -227,8 +224,8 @@ export default {
         },
         {
           content: "语文", // 显示内容
-          start: "2023/05/27 11:30", // 开始时间
-          end: "2023/05/27 13:00", // 结束时间
+          start: "2023/06/03 11:30", // 开始时间
+          end: "2023/06/03 13:00", // 结束时间
         },
         {
           content: "数学", // 显示内容
@@ -325,14 +322,14 @@ export default {
       let distanceHours = start.getHours() - timeRangeStart;
       return (distanceHours * 60 + start.getMinutes()) * (hours_height / 60);
     },
-    // 计算一个时间块的上限下限位置
+    // 计算一个时间块的上限下限位置(位置数据最好只用于展示，用于做时间计算容易有误差)
     computeRootAndBase(block, index) {
       // block 只要有top， height即可
       console.log("block", block, index);
       // 上方元素的底部top（元素的最大顶部top，下方元素的顶部top（元素底部最大top）
       let roof = 0,
         base = tbody;
-      if (this.tableAttrs.selectCover) return { roof, base };
+
       const tl = this.table[index];
       // 总计此tl上的selectblock与block
       let target = tl.block.concat(tl.selectBlock);
@@ -367,6 +364,25 @@ export default {
       block.roof = roof;
       block.base = base;
       return { roof, base };
+    },
+    // 计算一个元素上限到下限的时间长度
+    computeLeisureTime(target, index) {
+      const tl = this.table[index];
+      // 块的默认顶部底部位置
+      let roofTime = new Date(tl.dateText),
+        baseTime = new Date(tl.dateText);
+      roofTime.setHours(this.tableAttrs.timeRange[0]);
+      baseTime.setHours(this.tableAttrs.timeRange[1] + 1);
+      console.log("roof", roofTime);
+      console.log("base", baseTime);
+      tl.block.concat(tl.selectBlock).forEach((item) => {
+        // 该块的顶部与底部top
+        let itemRoof = item.startTimeDateObject,
+          itemBase = item.endTimeDateObject;
+        if (target > itemBase && roofTime < itemBase) roofTime = itemBase;
+        else if (target < itemRoof && baseTime > itemRoof) baseTime = itemRoof;
+      });
+      return { roofTime, baseTime };
     },
 
     // 根据时间块时间计算时间块高度
@@ -433,20 +449,8 @@ export default {
       let top = event.target.offsetTop + event.offsetY; // 点击位置与tbody距离
       const dateText = this.table[tlIndex].dateText;
       const timeRangeStart = this.tableAttrs.timeRange[0];
-
-      const { roof, base } = this.computeRootAndBase(
-        { top, height: 0 },
-        tlIndex
-      );
-      // 时间区间条件判断
-      if (base - roof < hours_height) {
-        window.alert("该时间段不足以生成选择快");
-        return;
-      }
-      let obj = { roof, base };
-      let offsetTop = event.target.offsetTop;
-      // 如果点击到的td有足够的高度
-      if (base - offsetTop >= hours_height) {
+      let obj = {};
+      function time() {
         // 会有误差出现
         // startTime: dateText + " " + this.computeTimeByTop(top),
         // endTime: dateText + " " + this.computeTimeByTop(hours_height + top),
@@ -459,10 +463,41 @@ export default {
           let hours = timeRangeStart + index + 1;
           return `${dateText} ${hours < 10 ? "0" + hours : hours}:00`;
         })();
-      } else {
-        obj.start = `${dateText} ${this.computeTimeByTop(base - hours_height)}`;
-        obj.end = `${dateText} ${this.computeTimeByTop(base)}`;
       }
+
+      if (!this.tableAttrs.selectCover) {
+        const target = this.computeTimeByTop(top);
+        const { roofTime, baseTime } = this.computeLeisureTime(
+          new Date(`${dateText} ${target}`),
+          tlIndex
+        );
+        console.log(roofTime, baseTime);
+        // 时间区间条件判断
+        if (baseTime - roofTime < 60000) {
+          window.alert("该时间段不足以生成选择快");
+          return;
+        }
+        const { roof, base } = this.computeRootAndBase(
+          { top, height: 0 },
+          tlIndex
+        );
+        obj = { roof, base };
+        let offsetTop = event.target.offsetTop;
+        // 如果点击到的td有足够的高度
+        if (base - offsetTop >= hours_height) time()
+        else {
+          obj.start = `${dateText} ${this.computeTimeByTop(
+            base - hours_height
+          )}`;
+          obj.end = `${dateText} ${this.computeTimeByTop(base)}`;
+        }
+      }else {
+        time()
+        obj.roof = 0;
+        obj.base = tbody
+      }
+      console.log(obj);
+      
       this.table[tlIndex].selectBlock.push(new SelectBlock(obj, this));
     },
 
@@ -527,7 +562,7 @@ export default {
       // console.log("start", event, index, mouseDown);
       // 记录开始位置
       start = event.pageY;
-      this.computeRootAndBase(item, tlIndex);
+      if(!this.tableAttrs.selectCover) this.computeRootAndBase(item, tlIndex);
     },
 
     move(event, target = currentMoveSelectBlock) {
@@ -586,7 +621,7 @@ export default {
     },
     // 刷新数据
     refresh() {
-      console.log('refresh');
+      console.log("refresh");
       this.getElementHeight(() => {
         this.table.forEach((tl) => {
           tl.block.concat(tl.selectBlock).forEach((e) => {
@@ -648,7 +683,6 @@ $BDC: #e8e8e8;
 
 .classSchedule {
   display: flex;
-  // height: 994px;
   width: 750px;
   height: 100%;
   border: 1px solid $BDC;

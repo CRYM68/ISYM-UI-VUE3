@@ -12,7 +12,7 @@ const sheduleAttrs = reactive({
         timeRange: [7, 23], // 时间范围
         select: true,
         // 选择模式下，选择块是否可以覆盖其他类型块
-        selectCover: false,
+        selectCover: true,
         // 选择块数量限制
         selectNumberRestrict: -1,
   },
@@ -34,6 +34,7 @@ const sheduleAttrs = reactive({
 
 <style scoped>
 .schedule{
+  width: 50vw;
   height: 100vh;
 }
 </style>
