@@ -143,16 +143,17 @@ const Block = function (target, that) {
     throw new Error(
       "Invalid data.The end time should be longer than the start time"
     );
-    // 校验要考虑24：00的极限时间,开始时间不会更换日期
-  this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD"); 
-  if (this.endTimeDateObject - new Date(this.dateText) <= 24 * 60000 )
+  // 校验要考虑24：00的极限时间,开始时间不会更换日期
+  this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
+  console.log('err',this.endTimeDateObject, new Date(this.dateText));
+  if (this.endTimeDateObject - new Date(this.dateText) > 24 * 3600000)
     throw new Error(
       "Invalid data.The start time and end time should be the same day"
     );
   this.content = target.content || ""; // 课程名称（模块名称)
   this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
   this.endTimeText = this.endTimeDateObject.formatTime("HH:MM");
-  
+
   this.top = that.computeBlockTop(this.startTimeDateObject);
   this.height = that.computeBlockHeight(
     this.startTimeDateObject,
@@ -484,20 +485,20 @@ export default {
         obj = { roof, base };
         let offsetTop = event.target.offsetTop;
         // 如果点击到的td有足够的高度
-        if (base - offsetTop >= hours_height) time()
+        if (base - offsetTop >= hours_height) time();
         else {
           obj.start = `${dateText} ${this.computeTimeByTop(
             base - hours_height
           )}`;
           obj.end = `${dateText} ${this.computeTimeByTop(base)}`;
         }
-      }else {
-        time()
+      } else {
+        time();
         obj.roof = 0;
-        obj.base = tbody
+        obj.base = tbody;
       }
       console.log(obj);
-      
+
       this.table[tlIndex].selectBlock.push(new SelectBlock(obj, this));
     },
 
@@ -562,7 +563,7 @@ export default {
       // console.log("start", event, index, mouseDown);
       // 记录开始位置
       start = event.pageY;
-      if(!this.tableAttrs.selectCover) this.computeRootAndBase(item, tlIndex);
+      if (!this.tableAttrs.selectCover) this.computeRootAndBase(item, tlIndex);
     },
 
     move(event, target = currentMoveSelectBlock) {
