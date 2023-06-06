@@ -374,8 +374,6 @@ export default {
         baseTime = new Date(tl.dateText);
       roofTime.setHours(this.tableAttrs.timeRange[0]);
       baseTime.setHours(this.tableAttrs.timeRange[1] + 1);
-      console.log("roof", roofTime);
-      console.log("base", baseTime);
       tl.block.concat(tl.selectBlock).forEach((item) => {
         // 该块的顶部与底部top
         let itemRoof = item.startTimeDateObject,
@@ -472,9 +470,8 @@ export default {
           new Date(`${dateText} ${target}`),
           tlIndex
         );
-        console.log(roofTime, baseTime);
         // 时间区间条件判断
-        if (baseTime - roofTime < 60000) {
+        if (baseTime - roofTime < 60 * 60 * 1000) {
           window.alert("该时间段不足以生成选择快");
           return;
         }
