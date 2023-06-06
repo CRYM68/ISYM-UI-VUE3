@@ -39,19 +39,17 @@
             v-for="(blockItem, i) in item.block"
             :class="['block', 'class', 'center']"
             :key="i"
-            :style="{
-              height: blockItem.height + 'px',
+            :style="Object.assign({
+               height: blockItem.height + 'px',
               top: blockItem.top + 'px',
               'z-index': 2,
-            }"
+            }, tableConfig.status[blockItem.status])"
           >
             <slot name="block-content">
               <div class="content">
                 <div>{{ blockItem.content }}</div>
                 <div>
-                  {{
-                    `(${blockItem.startTimeText} - ${blockItem.endTimeText})`
-                  }}
+                  {{ `(${blockItem.startTimeText} - ${blockItem.endTimeText})` }}
                 </div>
               </div>
             </slot>
@@ -135,6 +133,7 @@ let moveType = undefined;
 const Block = function (target, that) {
   this.startTimeDateObject = new Date(target.start);
   this.endTimeDateObject = new Date(target.end);
+  console.dir(this.startTimeDateObject, this.endTimeDateObject);
   if (this.startTimeDateObject.toString() === "Invalid Date")
     throw new Error("Invalid attrbute start");
   if (this.endTimeDateObject.toString() === "Invalid Date")
@@ -145,7 +144,7 @@ const Block = function (target, that) {
     );
   // 校验要考虑24：00的极限时间,开始时间不会更换日期
   this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
-  console.log('err',this.endTimeDateObject, new Date(this.dateText));
+  // console.log('err',this.endTimeDateObject, new Date(this.dateText));
   if (this.endTimeDateObject - new Date(this.dateText) > 24 * 3600000)
     throw new Error(
       "Invalid data.The start time and end time should be the same day"
@@ -159,6 +158,7 @@ const Block = function (target, that) {
     this.startTimeDateObject,
     this.endTimeDateObject
   ); // 个体高度
+  this.status = target.status;
   this.source = target; // 原数据
 };
 
@@ -680,13 +680,12 @@ export default {
 </script>
 
 <style lang="scss">
-$BDC: #e8e8e8;
-
 .classSchedule {
+  --line-color: #e8e8e8;
   display: flex;
   width: 750px;
   height: 100%;
-  border: 1px solid $BDC;
+  border: 1px solid var(--line-color);
   border-radius: 10px;
   background-color: #ffffff;
   user-select: none;
@@ -737,14 +736,14 @@ $BDC: #e8e8e8;
       height: 100%;
       display: flex;
       flex-direction: column;
-      border-left: 1px solid $BDC;
+      border-left: 1px solid var(--line-color);
 
       .thead {
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        border-bottom: 1px solid $BDC;
+        border-bottom: 1px solid var(--line-color);
         font-size: 14px;
         text-align: center;
       }
@@ -760,14 +759,14 @@ $BDC: #e8e8e8;
         .td {
           width: 100%;
           flex: 1;
-          border-bottom: 1px solid $BDC;
+          border-bottom: 1px solid var(--line-color);
         }
 
         .block {
           position: absolute;
           left: 0;
           overflow: hidden;
-          background: linear-gradient(#ff00bb80, #cccccc80);
+          background-image: linear-gradient(#ff00bb80, #cccccc80);
           user-select: none;
 
           .content {
