@@ -37,7 +37,7 @@
 
           <div
             v-for="(b, i) in item.block"
-            :class="['block', 'class', 'center']"
+            class="block"
             :key="i"
             :style="
               Object.assign(
@@ -136,30 +136,39 @@ let moveType = undefined;
 // let min_time = 1;
 
 const Block = function (target, that) {
-  this.startTimeDateObject = new Date(target.start);
-  this.endTimeDateObject = new Date(target.end);
-  if (this.startTimeDateObject.toString() === "Invalid Date")
+  this.startDateObject = new Date(target.start);
+  this.endDateObject = new Date(target.end);
+  // 校验时间有效性
+  if (this.startDateObject.toString() === "Invalid Date")
     throw new TypeError("Invalid attrbute start");
-  if (this.endTimeDateObject.toString() === "Invalid Date")
+  if (this.endDateObject.toString() === "Invalid Date")
     throw new TypeError("Invalid attrbute end");
-  if (this.endTimeDateObject < this.startTimeDateObject)
+  if (this.endDateObject < this.startDateObject)
     throw new TypeError(
       "Invalid data.The end time should be longer than the start time"
     );
+    // 是否在time range内
+  this.startTimeText = this.startDateObject.formatTime("HH:MM");
+  this.endTimeText = this.endDateObject.formatTime("HH:MM");
+  if(
+    this.startTimeText.slice(0, 2) < that.tableAttrs.timeRange[0] || 
+    this.endTimeText.slice(0, 2) > that.tableAttrs.timeRange[1]
+   ){
+    throw new TypeError("Invalid data.Time is out of range.");
+  }
   // 校验要考虑24：00的极限时间,开始时间不会更换日期
-  this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
-  if (this.endTimeDateObject - new Date(this.dateText) > 24 * 3600000)
+  this.dateText = this.startDateObject.formatTime("YYYY/MM/DD");
+  if (this.endDateObject - new Date(this.dateText) > 24 * 3600000)
     throw new Error(
       "Invalid data.The start time and end time should be the same day"
     );
-  this.content = target.content || ""; // 课程名称（模块名称)
-  this.startTimeText = this.startTimeDateObject.formatTime("HH:MM");
-  this.endTimeText = this.endTimeDateObject.formatTime("HH:MM");
 
-  this.top = that.computeBlockTop(this.startTimeDateObject);
+ 
+  this.content = target.content || ""; // 课程名称（模块名称)
+  this.top = that.computeBlockTop(this.startDateObject);
   this.height = that.computeBlockHeight(
-    this.startTimeDateObject,
-    this.endTimeDateObject
+    this.startDateObject,
+    this.endDateObject
   ); // 个体高度
 
   this.status = target.status;
@@ -316,27 +325,25 @@ export default {
 
   computed: {
     tableAttrs() {
-      return Object.assign(
-        {
-          startDate: new Date(), // 开始日期
+      const DV = {
+        startDate: new Date(), // 开始日期
           // 结束日期与显示天数有一个就行
           // endDate: "", // 结束日期
           days: 7, // 显示天数
-          timeRange: [7, 23], // 时间范围
+          timeRange: [7, 24], // 时间范围
           select: true,
           // 选择模式下，选择块是否可以覆盖其他类型块
-          selectCover: true,
+          selectCover: false,
           // 选择块数量限制
           selectNumberRestrict: -1,
           statusConfig: { defaultStatus: {} },
-        },
-        this.tableConfig
-      );
+      };
+      return Object.assign(DV, this.tableConfig);
     },
     timestamp() {
       const [start, end] = this.tableAttrs.timeRange;
       const stamp = [];
-      for (let i = 0; i <= end - start; i++) {
+      for (let i = 0; i < end - start; i++) {
         stamp.push(start + i);
       }
       return stamp;
@@ -429,8 +436,8 @@ export default {
       baseTime.setHours(this.tableAttrs.timeRange[1] + 1);
       tl.block.concat(tl.selectBlock).forEach((item) => {
         // 该块的顶部与底部top
-        let itemRoof = item.startTimeDateObject,
-          itemBase = item.endTimeDateObject;
+        let itemRoof = item.startDateObject,
+          itemBase = item.endDateObject;
         if (target > itemBase && roofTime < itemBase) roofTime = itemBase;
         else if (target < itemRoof && baseTime > itemRoof) baseTime = itemRoof;
       });
@@ -457,7 +464,7 @@ export default {
       // 根据top(与tbody的距离)计算时间
       // 极限值判断
       if (top === tbody) {
-        let hours = this.tableAttrs.timeRange[1] + 1;
+        let hours = this.tableAttrs.timeRange[1];
         if (hours === 24) hours = 0;
         return (hours < 10 ? "0" + hours : hours) + ":" + "00";
       }
@@ -635,15 +642,15 @@ export default {
       start = 0;
       currentMoveSelectBlock = null;
       // 更新数据
-      item.startTimeDateObject = new Date(
+      item.startDateObject = new Date(
         item.dateText + " " + item.startTimeText
       );
-      item.endTimeDateObject = new Date(item.dateText + " " + item.endTimeText);
+      item.endDateObject = new Date(item.dateText + " " + item.endTimeText);
     },
 
     // 创建表格基础数据结构
     createBaseConstruction() {
-      let { startDate, days, select } = this.tableAttrs;
+      let { startDate, days, select, timeRange } = this.tableAttrs;
       if (typeof startDate === "string") startDate = new Date(startDate);
       // 行数据的工厂函数
       const tl = function (date /* date是一个时间对象 */) {
@@ -654,6 +661,8 @@ export default {
         this.block = [];
         if (select) this.selectBlock = [];
         this.dayText = date.getDayText("星期");
+        this.TRSObject = new Date(this.dateText + ' ' + timeRange[0] + ':00' );
+        this.TREObject = new Date(this.dateText + ' ' + (timeRange[1]) + ':00' );
       };
       this.table.push(new tl(startDate));
       if (days) {
@@ -669,10 +678,10 @@ export default {
       this.getElementHeight(() => {
         this.table.forEach((tl) => {
           tl.block.concat(tl.selectBlock).forEach((e) => {
-            e.top = this.computeBlockTop(e.startTimeDateObject);
+            e.top = this.computeBlockTop(e.startDateObject);
             e.height = this.computeBlockHeight(
-              e.startTimeDateObject,
-              e.endTimeDateObject
+              e.startDateObject,
+              e.endDateObject
             ); // 个体高度
           });
         });
@@ -684,7 +693,7 @@ export default {
         tbody = document.querySelector("#tbody").offsetHeight;
         hours_height =
           tbody /
-          (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0] + 1);
+          (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0]);
         fn && fn();
       });
     },
@@ -809,6 +818,11 @@ export default {
           overflow: hidden;
           background-image: linear-gradient(#ff00bb80, #cccccc80);
           user-select: none;
+          box-sizing: border-box;
+          width: 100%;
+          border-radius: 6px;
+          color: #fff;
+          font-size: 20px;
 
           .content {
             font-size: 14px;
@@ -820,37 +834,8 @@ export default {
             -webkit-box-orient: vertical;
             // -webkit-line-clamp: 6;
           }
-        }
-
-        // 教师学员块
-        .class {
-          box-sizing: border-box;
-          width: 100%;
-          border-radius: 6px;
-          color: #fff;
-          font-size: 20px;
-
-          &.green {
-            background-color: #18d78b;
-          }
-
-          &.blue {
-            background-color: #2bbff8;
-          }
-
-          &.yellow {
-            background-color: #ffb200;
-          }
-
-          &.red {
-            background-color: #fa615c;
-          }
-
-          &.grey {
-            background-color: #cccccc;
-          }
-
-          .text {
+          &:hover{
+            z-index: 20;
           }
         }
 
