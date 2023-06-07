@@ -62,7 +62,7 @@
           <!-- 选择块 select -->
           <div
             v-for="(item_1, i) in item.selectBlock || []"
-            :class="['select', 'center']"
+            :class="['select', currentMoveSelectBlock === item_1 && 'current']"
             :key="i"
             :style="{
               height: item_1.height + 'px',
@@ -118,7 +118,7 @@ let start;
 let mouseDown = false;
 
 // 选择块移动体验优化，当前操作的选择块数据
-let currentMoveSelectBlock = null;
+// let currentMoveSelectBlock = null;
 let moveType = undefined;
 
 // 代表已有选择块数量 ( 选择块计数器 )
@@ -303,6 +303,11 @@ export default {
       ],
     },
 
+    beforeRemove: {
+      type: Function,
+      default: () => true
+    }
+
     // 选择块数量限制
     // select_number: {
     //   type: Number,
@@ -315,11 +320,12 @@ export default {
     //   default: [],
     // },
   },
-  emits: ["update:selectData"],
+  emits: ["update:selectData", 'remove'],
 
   data() {
     return {
       table: [],
+      currentMoveSelectBlock: null
     };
   },
 
@@ -333,7 +339,7 @@ export default {
           timeRange: [7, 24], // 时间范围
           select: true,
           // 选择模式下，选择块是否可以覆盖其他类型块
-          selectCover: false,
+          selectCover: true,
           // 选择块数量限制
           selectNumberRestrict: -1,
           statusConfig: { defaultStatus: {} },
@@ -362,16 +368,6 @@ export default {
   },
 
   methods: {
-    blockStyle(blockItem) {
-      return Object.assign(
-        {
-          height: blockItem.height + "px",
-          top: blockItem.top + "px",
-          zIndex: 2,
-        },
-        this.tableConfig.statusConfig[blockItem.status]
-      );
-    },
     /**
      * 块的计算与操作
      * */
@@ -497,7 +493,7 @@ export default {
      * */
     // 移除可操作的时间块 1 select类型 2 assign类型
     removeSelectBlock(tlIndex, index) {
-      this.table[tlIndex].selectBlock.splice(index, 1);
+      if(this.beforeRemove()) this.table[tlIndex].selectBlock.splice(index, 1);
     },
 
     // 添加普通选择块
@@ -571,7 +567,7 @@ export default {
     },
 
     // 选择块的下箭头移动
-    bottom_move(event, target = currentMoveSelectBlock) {
+    bottom_move(event, target = this.currentMoveSelectBlock) {
       if (!mouseDown) return;
       let change = event.pageY - start; // 正增负减
       let height = change + target.height; // height为最终高度
@@ -588,7 +584,7 @@ export default {
     },
 
     // 选择块的上箭头移动
-    top_move(event, target = currentMoveSelectBlock) {
+    top_move(event, target = this.currentMoveSelectBlock) {
       if (!mouseDown) return;
       let change = start - event.pageY; // 正增负减
       let height = change + target.height;
@@ -611,14 +607,14 @@ export default {
 
     start(event, item, tlIndex, mType) {
       mouseDown = true;
-      currentMoveSelectBlock = item;
+      this.currentMoveSelectBlock = item;
       moveType = mType;
       // 记录开始位置
       start = event.pageY;
       if (!this.tableAttrs.selectCover) this.computeRootAndBase(item, tlIndex);
     },
 
-    move(event, target = currentMoveSelectBlock) {
+    move(event, target = this.currentMoveSelectBlock) {
       if (!mouseDown) return;
       let top = event.pageY - start + target.top; // 移动后，顶部距离tbody距离
       if (top < target.roof) {
@@ -633,14 +629,14 @@ export default {
       start = event.pageY;
     },
 
-    end(event, item = currentMoveSelectBlock) {
+    end(event, item = this.currentMoveSelectBlock) {
       if (!mouseDown) return;
       // 移动速度较快时会导致move触发间隔被拉出较大距离
       this.move(event);
       // 停止移动，位置记录清空
       mouseDown = false;
       start = 0;
-      currentMoveSelectBlock = null;
+      // currentMoveSelectBlock = null;
       // 更新数据
       item.startDateObject = new Date(
         item.dateText + " " + item.startTimeText
@@ -847,7 +843,7 @@ export default {
           width: 100%;
           border-radius: 6px;
           background-color: #2bbff8;
-          opacity: 0.7;
+          opacity: 0.6;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -878,6 +874,11 @@ export default {
             .arrow {
               transform: rotate(225deg);
             }
+          }
+
+          &.current{
+            z-index: 24;
+            opacity: 0.8;
           }
 
           &:hover {
