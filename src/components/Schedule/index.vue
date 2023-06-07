@@ -36,27 +36,24 @@
           <!-- 纯展示 -->
 
           <div
-            v-for="(blockItem, i) in item.block"
+            v-for="(b, i) in item.block"
             :class="['block', 'class', 'center']"
             :key="i"
             :style="
               Object.assign(
                 {
-                  height: blockItem.height + 'px',
-                  top: blockItem.top + 'px',
-                  'z-index': 2,
+                  height: b.height + 'px',
+                  top: b.top + 'px',
                 },
-                )
-                "
+                tableAttrs.statusConfig[b.status]
+              )
+            "
           >
-          <!-- blockItem.status && tableConfig.status[blockItem.status] -->
             <slot name="block-content">
               <div class="content">
-                <div>{{ blockItem.content }}</div>
+                <div>{{ b.content }}</div>
                 <div>
-                  {{
-                    `(${blockItem.startTimeText} - ${blockItem.endTimeText})`
-                  }}
+                  {{ `(${b.startTimeText} - ${b.endTimeText})` }}
                 </div>
               </div>
             </slot>
@@ -108,6 +105,7 @@
 
 <script>
 // --- 计算项
+
 // 1 小时的块高度
 let hours_height = 0;
 
@@ -140,18 +138,16 @@ let moveType = undefined;
 const Block = function (target, that) {
   this.startTimeDateObject = new Date(target.start);
   this.endTimeDateObject = new Date(target.end);
-  console.dir(this.startTimeDateObject, this.endTimeDateObject);
   if (this.startTimeDateObject.toString() === "Invalid Date")
-    throw new Error("Invalid attrbute start");
+    throw new TypeError("Invalid attrbute start");
   if (this.endTimeDateObject.toString() === "Invalid Date")
-    throw new Error("Invalid attrbute end");
+    throw new TypeError("Invalid attrbute end");
   if (this.endTimeDateObject < this.startTimeDateObject)
-    throw new Error(
+    throw new TypeError(
       "Invalid data.The end time should be longer than the start time"
     );
   // 校验要考虑24：00的极限时间,开始时间不会更换日期
   this.dateText = this.startTimeDateObject.formatTime("YYYY/MM/DD");
-  // console.log('err',this.endTimeDateObject, new Date(this.dateText));
   if (this.endTimeDateObject - new Date(this.dateText) > 24 * 3600000)
     throw new Error(
       "Invalid data.The start time and end time should be the same day"
@@ -165,7 +161,8 @@ const Block = function (target, that) {
     this.startTimeDateObject,
     this.endTimeDateObject
   ); // 个体高度
-  target !== undefined && (this.status = target.status);
+
+  this.status = target.status;
   this.source = target; // 原数据
 };
 
@@ -206,6 +203,9 @@ export default {
             case "selectCover":
               if (!(typeof target === "boolean")) return false;
               break;
+            case "statusConfig":
+              if (!(typeof target === "object")) return false;
+              break;
           }
         }
         return true;
@@ -244,41 +244,53 @@ export default {
           end: new Date(Date.now() + 51 * 60 * 60 * 1000), // 结束时间
           status: 3,
         },
-        // {
-        //   content: "语文", // 显示内容
-        //   start: new Date(), // 开始时间
-        //   end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
-        // },
-        // {
-        //   content: "Error", // 显示内容
-        //   start: "jkl", // 开始时间
-        //   end: "2023/05/27 12:00", // 结束时间
-        // },
-        // {
-        //   content: "语文", // 显示内容
-        //   start: "2023/06/03 11:30", // 开始时间
-        //   end: "2023/06/03 13:00", // 结束时间
-        // },
-        // {
-        //   content: "数学", // 显示内容
-        //   start: "2023/05/29 09:30", // 开始时间
-        //   end: "2023/05/29 12:40", // 结束时间
-        // },
-        // {
-        //   content: "生物", // 显示内容
-        //   start: "2023/05/28 13:00", // 开始时间
-        //   end: "2023/05/28 14:00", // 结束时间
-        // },
-        // {  
-        //   content: "地理", // 显示内容
-        //   start: "2023/05/30 14:00", // 开始时间
-        //   end: "2023/05/30 15:00", // 结束时间
-        // },
-        // {
-        //   content: "提瓦特元素类型与相关反应", // 显示内容
-        //   start: "2023/05/31 16:00", // 开始时间
-        //   end: "2023/05/31 20:00", // 结束时间
-        // },
+        {
+          content: "元素导论", // 显示内容
+          start: new Date(Date.now() + 60 * 60 * 60 * 1000), // 开始时间
+          end: new Date(Date.now() + 63 * 60 * 60 * 1000), // 结束时间
+          status: 3,
+        },
+        {
+          content: "元素导论", // 显示内容
+          start: new Date(Date.now() + 50 * 60 * 60 * 1000), // 开始时间
+          end: new Date(Date.now() + 53 * 60 * 60 * 1000), // 结束时间
+          status: 3,
+        },
+        {
+          content: "语文", // 显示内容
+          start: new Date(), // 开始时间
+          end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
+        },
+        {
+          content: "Error", // 显示内容
+          start: "jkl", // 开始时间
+          end: "2023/05/27 12:00", // 结束时间
+        },
+        {
+          content: "语文", // 显示内容
+          start: "2023/06/03 11:30", // 开始时间
+          end: "2023/06/03 13:00", // 结束时间
+        },
+        {
+          content: "数学", // 显示内容
+          start: "2023/05/29 09:30", // 开始时间
+          end: "2023/05/29 12:40", // 结束时间
+        },
+        {
+          content: "生物", // 显示内容
+          start: "2023/05/28 13:00", // 开始时间
+          end: "2023/05/28 14:00", // 结束时间
+        },
+        {
+          content: "地理", // 显示内容
+          start: "2023/05/30 14:00", // 开始时间
+          end: "2023/05/30 15:00", // 结束时间
+        },
+        {
+          content: "提瓦特元素类型与相关反应", // 显示内容
+          start: "2023/05/31 16:00", // 开始时间
+          end: "2023/05/31 20:00", // 结束时间
+        },
       ],
     },
 
@@ -313,9 +325,10 @@ export default {
           timeRange: [7, 23], // 时间范围
           select: true,
           // 选择模式下，选择块是否可以覆盖其他类型块
-          selectCover: false,
+          selectCover: true,
           // 选择块数量限制
           selectNumberRestrict: -1,
+          statusConfig: { defaultStatus: {} },
         },
         this.tableConfig
       );
@@ -342,6 +355,16 @@ export default {
   },
 
   methods: {
+    blockStyle(blockItem) {
+      return Object.assign(
+        {
+          height: blockItem.height + "px",
+          top: blockItem.top + "px",
+          zIndex: 2,
+        },
+        this.tableConfig.statusConfig[blockItem.status]
+      );
+    },
     /**
      * 块的计算与操作
      * */
@@ -357,7 +380,6 @@ export default {
     // 计算一个时间块的上限下限位置(位置数据最好只用于展示，用于做时间计算容易有误差)
     computeRootAndBase(block, index) {
       // block 只要有top， height即可
-      console.log("block", block, index);
       // 上方元素的底部top（元素的最大顶部top，下方元素的顶部top（元素底部最大top）
       let roof = 0,
         base = tbody;
@@ -433,7 +455,6 @@ export default {
     // 根据时间块的top值计算top值所在位置的时间（存在误差）
     computeTimeByTop(top) {
       // 根据top(与tbody的距离)计算时间
-      // console.log('top', top);
       // 极限值判断
       if (top === tbody) {
         let hours = this.tableAttrs.timeRange[1] + 1;
@@ -474,7 +495,6 @@ export default {
 
     // 添加普通选择块
     appendSelectBlock(event, tlIndex, index) {
-      console.log(event);
       if (!this.tableAttrs.select) return; // 是否开启选择模式
       let top = event.target.offsetTop + event.offsetY; // 点击位置与tbody距离
       const dateText = this.table[tlIndex].dateText;
@@ -525,8 +545,6 @@ export default {
         obj.roof = 0;
         obj.base = tbody;
       }
-      console.log(obj);
-
       this.table[tlIndex].selectBlock.push(new SelectBlock(obj, this));
     },
 
@@ -588,7 +606,6 @@ export default {
       mouseDown = true;
       currentMoveSelectBlock = item;
       moveType = mType;
-      // console.log("start", event, index, mouseDown);
       // 记录开始位置
       start = event.pageY;
       if (!this.tableAttrs.selectCover) this.computeRootAndBase(item, tlIndex);
@@ -636,7 +653,6 @@ export default {
         // 便面后面push数据报错，这里先定义
         this.block = [];
         if (select) this.selectBlock = [];
-        // this.assign = [];
         this.dayText = date.getDayText("星期");
       };
       this.table.push(new tl(startDate));
@@ -650,7 +666,6 @@ export default {
     },
     // 刷新数据
     refresh() {
-      console.log("refresh");
       this.getElementHeight(() => {
         this.table.forEach((tl) => {
           tl.block.concat(tl.selectBlock).forEach((e) => {
@@ -671,8 +686,6 @@ export default {
           tbody /
           (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0] + 1);
         fn && fn();
-        console.log("data", this.data, this.table);
-        console.table("hoursHeight", hours_height);
       });
     },
 
@@ -684,9 +697,9 @@ export default {
         // 生成块数据并放置到对应tl(列表项)
         this.data.forEach((item) => {
           try {
-            item = Object.assign(item, new Block(item, this));
-            this.table.forEach((e) => {
-              if (e.dateText === item.dateText) e.block.push(item);
+            item = new Block(item, this);
+            this.table.forEach(tl => {
+              if (tl.dateText === item.dateText) tl.block.push(item);
             });
           } catch (err) {
             console.error(err);
