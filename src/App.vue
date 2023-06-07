@@ -36,9 +36,15 @@ const sheduleAttrs = reactive({
       status: 2,
     },
     {
+      content: "生物", // 显示内容
+      start: new Date(Date.now() + 13 * 60 * 60 * 1000), // 开始时间
+      end: new Date(Date.now() + 17 * 60 * 60 * 1000), // 结束时间
+      status: 2,
+    },
+    {
       content: "元素导论", // 显示内容
-      start: new Date(Date.now() + 20 * 60 * 60 * 1000), // 开始时间
-      end: new Date(Date.now() + 26 * 60 * 60 * 1000), // 结束时间
+      start: new Date(Date.now() + 48 * 60 * 60 * 1000), // 开始时间
+      end: new Date(Date.now() + 51 * 60 * 60 * 1000), // 结束时间
       status: 3,
     },
   ],

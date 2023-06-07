@@ -39,17 +39,24 @@
             v-for="(blockItem, i) in item.block"
             :class="['block', 'class', 'center']"
             :key="i"
-            :style="Object.assign({
-               height: blockItem.height + 'px',
-              top: blockItem.top + 'px',
-              'z-index': 2,
-            }, tableConfig.status[blockItem.status])"
+            :style="
+              Object.assign(
+                {
+                  height: blockItem.height + 'px',
+                  top: blockItem.top + 'px',
+                  'z-index': 2,
+                },
+                )
+                "
           >
+          <!-- blockItem.status && tableConfig.status[blockItem.status] -->
             <slot name="block-content">
               <div class="content">
                 <div>{{ blockItem.content }}</div>
                 <div>
-                  {{ `(${blockItem.startTimeText} - ${blockItem.endTimeText})` }}
+                  {{
+                    `(${blockItem.startTimeText} - ${blockItem.endTimeText})`
+                  }}
                 </div>
               </div>
             </slot>
@@ -158,7 +165,7 @@ const Block = function (target, that) {
     this.startTimeDateObject,
     this.endTimeDateObject
   ); // 个体高度
-  this.status = target.status;
+  target !== undefined && (this.status = target.status);
   this.source = target; // 原数据
 };
 
@@ -217,37 +224,61 @@ export default {
           content: "语文", // 显示内容
           start: new Date(), // 开始时间
           end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
-        },
-        {
-          content: "Error", // 显示内容
-          start: "jkl", // 开始时间
-          end: "2023/05/27 12:00", // 结束时间
-        },
-        {
-          content: "语文", // 显示内容
-          start: "2023/06/03 11:30", // 开始时间
-          end: "2023/06/03 13:00", // 结束时间
-        },
-        {
-          content: "数学", // 显示内容
-          start: "2023/05/29 09:30", // 开始时间
-          end: "2023/05/29 12:40", // 结束时间
+          status: 1,
         },
         {
           content: "生物", // 显示内容
-          start: "2023/05/28 13:00", // 开始时间
-          end: "2023/05/28 14:00", // 结束时间
+          start: new Date(Date.now() + 16 * 60 * 60 * 1000), // 开始时间
+          end: new Date(Date.now() + 18 * 60 * 60 * 1000), // 结束时间
+          status: 2,
         },
         {
-          content: "地理", // 显示内容
-          start: "2023/05/30 14:00", // 开始时间
-          end: "2023/05/30 15:00", // 结束时间
+          content: "生物", // 显示内容
+          start: new Date(Date.now() + 13 * 60 * 60 * 1000), // 开始时间
+          end: new Date(Date.now() + 17 * 60 * 60 * 1000), // 结束时间
+          status: 2,
         },
         {
-          content: "提瓦特元素类型与相关反应", // 显示内容
-          start: "2023/05/31 16:00", // 开始时间
-          end: "2023/05/31 20:00", // 结束时间
+          content: "元素导论", // 显示内容
+          start: new Date(Date.now() + 48 * 60 * 60 * 1000), // 开始时间
+          end: new Date(Date.now() + 51 * 60 * 60 * 1000), // 结束时间
+          status: 3,
         },
+        // {
+        //   content: "语文", // 显示内容
+        //   start: new Date(), // 开始时间
+        //   end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
+        // },
+        // {
+        //   content: "Error", // 显示内容
+        //   start: "jkl", // 开始时间
+        //   end: "2023/05/27 12:00", // 结束时间
+        // },
+        // {
+        //   content: "语文", // 显示内容
+        //   start: "2023/06/03 11:30", // 开始时间
+        //   end: "2023/06/03 13:00", // 结束时间
+        // },
+        // {
+        //   content: "数学", // 显示内容
+        //   start: "2023/05/29 09:30", // 开始时间
+        //   end: "2023/05/29 12:40", // 结束时间
+        // },
+        // {
+        //   content: "生物", // 显示内容
+        //   start: "2023/05/28 13:00", // 开始时间
+        //   end: "2023/05/28 14:00", // 结束时间
+        // },
+        // {  
+        //   content: "地理", // 显示内容
+        //   start: "2023/05/30 14:00", // 开始时间
+        //   end: "2023/05/30 15:00", // 结束时间
+        // },
+        // {
+        //   content: "提瓦特元素类型与相关反应", // 显示内容
+        //   start: "2023/05/31 16:00", // 开始时间
+        //   end: "2023/05/31 20:00", // 结束时间
+        // },
       ],
     },
 
