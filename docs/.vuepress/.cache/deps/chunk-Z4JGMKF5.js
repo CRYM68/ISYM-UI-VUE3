@@ -269,6 +269,7 @@ export {
   isArray,
   isMap,
   isSet,
+  isDate,
   isRegExp,
   isFunction,
   isString,
@@ -302,4 +303,4 @@ export {
   looseIndexOf,
   toDisplayString
 };
-//# sourceMappingURL=chunk-GKT4MK5C.js.map
+//# sourceMappingURL=chunk-Z4JGMKF5.js.map

@@ -1,0 +1,52 @@
+// @tailwind base;
+@tailwind components;
+@tailwind utilities;
+// @import "tailwindcss/base";
+// @import "tailwindcss/components";
+// @import "tailwindcss/utilities";
+
+:root {
+  // layout vars
+  --content-width: 800px;
+}
+.theme-default-content {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    // padding-bottom: 0.5rem;
+    // margin-bottom: 1rem;
+    // line-height: 1.5;
+    border-bottom: none;
+  }
+  @for $index from 1 to 6 {
+    h#{$index}{
+      font-size: #{3.5 - 0.5 * $index}rem;
+    }
+  }
+  // h1{
+  //   font-size: 3rem;
+  // }
+  // h2{
+  //   font-size: 2.5rem;
+  // }
+  // h3{
+  //   font-size: 2rem;
+  // }
+  // h4{
+  //   font-size: 2rem;
+  // }
+  // h3{
+  //   font-size: 2rem;
+  // }
+}
+
+tr:nth-child(2n){
+  background-color: transparent;
+}
+
+p{
+  font-size: 1.25rem;
+}

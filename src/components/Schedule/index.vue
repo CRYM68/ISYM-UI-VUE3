@@ -1,3 +1,7 @@
+@author: 长歌
+@lastEditTime: 2023.06.13 18:14
+@Editorial content: 修复class Block因为比较字符而导致的校验错误问题
+
 <template>
   <div class="classSchedule">
     <!-- 时间戳 -->
@@ -48,6 +52,7 @@
                 tableAttrs.statusConfig[b.status]
               )
             "
+            @click="$emit('BClick', item_1, $event)"
           >
             <slot name="block-content">
               <div class="content">
@@ -70,7 +75,7 @@
             }"
             @dblclick="removeSelectBlock(tlIndex, i)"
             @mousedown.stop="start($event, item_1, tlIndex, 'block')"
-            @longpress="remove(1, tlIndex, i)"
+            @click.stop="$emit('SClick', item_1, $event)"
           >
             <!-- 上移箭头 -->
             <div
@@ -101,6 +106,7 @@
     </div>
     <!-- 表格 END -->
   </div>
+ 
 </template>
 
 <script>
@@ -147,13 +153,20 @@ const Block = function (target, that) {
     throw new TypeError(
       "Invalid data.The end time should be longer than the start time"
     );
-    // 是否在time range内
+  // 是否在time range内
   this.startTimeText = this.startDateObject.formatTime("HH:MM");
   this.endTimeText = this.endDateObject.formatTime("HH:MM");
-  if(
-    this.startTimeText.slice(0, 2) < that.tableAttrs.timeRange[0] || 
-    this.endTimeText.slice(0, 2) > that.tableAttrs.timeRange[1]
-   ){
+  // console.log(
+  //   Number(this.startTimeText.split(":").reduce((acc, e) => acc + e, "")),
+  //   Number(that.tableAttrs.timeRange[0].toString() + "00"),
+  //   Number(this.endTimeText.split(":").reduce((acc, e) => acc + e, "")),
+  //   Number(that.tableAttrs.timeRange[1].toString() + "00"))
+  if (
+    Number(this.startTimeText.split(":").reduce((acc, e) => acc + e, "")) <
+      Number(that.tableAttrs.timeRange[0].toString() + "00") ||
+    Number(this.endTimeText.split(":").reduce((acc, e) => acc + e, "")) >
+      Number(that.tableAttrs.timeRange[1].toString() + "00")
+  ) {
     throw new TypeError("Invalid data.Time is out of range.");
   }
   // 校验要考虑24：00的极限时间,开始时间不会更换日期
@@ -163,7 +176,6 @@ const Block = function (target, that) {
       "Invalid data.The start time and end time should be the same day"
     );
 
- 
   this.content = target.content || ""; // 课程名称（模块名称)
   this.top = that.computeBlockTop(this.startDateObject);
   this.height = that.computeBlockHeight(
@@ -182,7 +194,7 @@ class SelectBlock extends Block {
     this.base = target.base;
   }
 }
-
+import { isRef, watch, computed } from "vue";
 export default {
   props: {
     tableConfig: {
@@ -229,84 +241,84 @@ export default {
     data: {
       type: Array,
       default: [
-        {
-          content: "语文", // 显示内容
-          start: new Date(), // 开始时间
-          end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
-          status: 1,
-        },
-        {
-          content: "生物", // 显示内容
-          start: new Date(Date.now() + 16 * 60 * 60 * 1000), // 开始时间
-          end: new Date(Date.now() + 18 * 60 * 60 * 1000), // 结束时间
-          status: 2,
-        },
-        {
-          content: "生物", // 显示内容
-          start: new Date(Date.now() + 13 * 60 * 60 * 1000), // 开始时间
-          end: new Date(Date.now() + 17 * 60 * 60 * 1000), // 结束时间
-          status: 2,
-        },
-        {
-          content: "元素导论", // 显示内容
-          start: new Date(Date.now() + 48 * 60 * 60 * 1000), // 开始时间
-          end: new Date(Date.now() + 51 * 60 * 60 * 1000), // 结束时间
-          status: 3,
-        },
-        {
-          content: "元素导论", // 显示内容
-          start: new Date(Date.now() + 60 * 60 * 60 * 1000), // 开始时间
-          end: new Date(Date.now() + 63 * 60 * 60 * 1000), // 结束时间
-          status: 3,
-        },
-        {
-          content: "元素导论", // 显示内容
-          start: new Date(Date.now() + 50 * 60 * 60 * 1000), // 开始时间
-          end: new Date(Date.now() + 53 * 60 * 60 * 1000), // 结束时间
-          status: 3,
-        },
-        {
-          content: "语文", // 显示内容
-          start: new Date(), // 开始时间
-          end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
-        },
-        {
-          content: "Error", // 显示内容
-          start: "jkl", // 开始时间
-          end: "2023/05/27 12:00", // 结束时间
-        },
-        {
-          content: "语文", // 显示内容
-          start: "2023/06/03 11:30", // 开始时间
-          end: "2023/06/03 13:00", // 结束时间
-        },
-        {
-          content: "数学", // 显示内容
-          start: "2023/05/29 09:30", // 开始时间
-          end: "2023/05/29 12:40", // 结束时间
-        },
-        {
-          content: "生物", // 显示内容
-          start: "2023/05/28 13:00", // 开始时间
-          end: "2023/05/28 14:00", // 结束时间
-        },
-        {
-          content: "地理", // 显示内容
-          start: "2023/05/30 14:00", // 开始时间
-          end: "2023/05/30 15:00", // 结束时间
-        },
-        {
-          content: "提瓦特元素类型与相关反应", // 显示内容
-          start: "2023/05/31 16:00", // 开始时间
-          end: "2023/05/31 20:00", // 结束时间
-        },
+        // {
+        //   content: "语文", // 显示内容
+        //   start: new Date(), // 开始时间
+        //   end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
+        //   status: 1,
+        // },
+        // {
+        //   content: "生物", // 显示内容
+        //   start: new Date(Date.now() + 16 * 60 * 60 * 1000), // 开始时间
+        //   end: new Date(Date.now() + 18 * 60 * 60 * 1000), // 结束时间
+        //   status: 2,
+        // },
+        // {
+        //   content: "生物", // 显示内容
+        //   start: new Date(Date.now() + 13 * 60 * 60 * 1000), // 开始时间
+        //   end: new Date(Date.now() + 17 * 60 * 60 * 1000), // 结束时间
+        //   status: 2,
+        // },
+        // {
+        //   content: "元素导论", // 显示内容
+        //   start: new Date(Date.now() + 48 * 60 * 60 * 1000), // 开始时间
+        //   end: new Date(Date.now() + 51 * 60 * 60 * 1000), // 结束时间
+        //   status: 3,
+        // },
+        // {
+        //   content: "元素导论", // 显示内容
+        //   start: new Date(Date.now() + 60 * 60 * 60 * 1000), // 开始时间
+        //   end: new Date(Date.now() + 63 * 60 * 60 * 1000), // 结束时间
+        //   status: 3,
+        // },
+        // {
+        //   content: "元素导论", // 显示内容
+        //   start: new Date(Date.now() + 50 * 60 * 60 * 1000), // 开始时间
+        //   end: new Date(Date.now() + 53 * 60 * 60 * 1000), // 结束时间
+        //   status: 3,
+        // },
+        // {
+        //   content: "语文", // 显示内容
+        //   start: new Date(), // 开始时间
+        //   end: new Date(Date.now() + 2 * 60 * 60 * 1000), // 结束时间
+        // },
+        // {
+        //   content: "Error", // 显示内容
+        //   start: "jkl", // 开始时间
+        //   end: "2023/05/27 12:00", // 结束时间
+        // },
+        // {
+        //   content: "语文", // 显示内容
+        //   start: "2023/06/03 11:30", // 开始时间
+        //   end: "2023/06/03 13:00", // 结束时间
+        // },
+        // {
+        //   content: "数学", // 显示内容
+        //   start: "2023/05/29 09:30", // 开始时间
+        //   end: "2023/05/29 12:40", // 结束时间
+        // },
+        // {
+        //   content: "生物", // 显示内容
+        //   start: "2023/05/28 13:00", // 开始时间
+        //   end: "2023/05/28 14:00", // 结束时间
+        // },
+        // {
+        //   content: "地理", // 显示内容
+        //   start: "2023/05/30 14:00", // 开始时间
+        //   end: "2023/05/30 15:00", // 结束时间
+        // },
+        // {
+        //   content: "提瓦特元素类型与相关反应", // 显示内容
+        //   start: "2023/05/31 16:00", // 开始时间
+        //   end: "2023/05/31 20:00", // 结束时间
+        // },
       ],
     },
 
     beforeRemove: {
       type: Function,
-      default: () => true
-    }
+      default: () => true,
+    },
 
     // 选择块数量限制
     // select_number: {
@@ -320,12 +332,12 @@ export default {
     //   default: [],
     // },
   },
-  emits: ["update:selectData", 'remove'],
+  emits: ["update:selectData", "BClick", "SClick"],
 
   data() {
     return {
       table: [],
-      currentMoveSelectBlock: null
+      currentMoveSelectBlock: null,
     };
   },
 
@@ -333,18 +345,19 @@ export default {
     tableAttrs() {
       const DV = {
         startDate: new Date(), // 开始日期
-          // 结束日期与显示天数有一个就行
-          // endDate: "", // 结束日期
-          days: 7, // 显示天数
-          timeRange: [7, 24], // 时间范围
-          select: true,
-          // 选择模式下，选择块是否可以覆盖其他类型块
-          selectCover: true,
-          // 选择块数量限制
-          selectNumberRestrict: -1,
-          statusConfig: { defaultStatus: {} },
+        // 结束日期与显示天数有一个就行
+        // endDate: "", // 结束日期
+        days: 7, // 显示天数
+        timeRange: [7, 24], // 时间范围
+        select: false,
+        // 选择模式下，选择块是否可以覆盖其他类型块
+        selectCover: true,
+        // 选择块数量限制
+        selectNumberRestrict: -1,
+        statusConfig: { defaultStatus: {} },
       };
-      return Object.assign(DV, this.tableConfig);
+      let c = this.tableConfig;
+      return Object.assign(DV, c);
     },
     timestamp() {
       const [start, end] = this.tableAttrs.timeRange;
@@ -355,13 +368,12 @@ export default {
       return stamp;
     },
   },
+
   watch: {
-    table: {
+    tableAttrs: {
       handler(newVal) {
-        this.$emit(
-          "update:selectData",
-          newVal.reduce((acc, e) => acc.concat(e.selectBlock), [])
-        );
+        console.log("update", newVal);
+        this.load();
       },
       deep: true,
     },
@@ -493,7 +505,7 @@ export default {
      * */
     // 移除可操作的时间块 1 select类型 2 assign类型
     removeSelectBlock(tlIndex, index) {
-      if(this.beforeRemove()) this.table[tlIndex].selectBlock.splice(index, 1);
+      if (this.beforeRemove()) this.table[tlIndex].selectBlock.splice(index, 1);
     },
 
     // 添加普通选择块
@@ -638,9 +650,7 @@ export default {
       start = 0;
       // currentMoveSelectBlock = null;
       // 更新数据
-      item.startDateObject = new Date(
-        item.dateText + " " + item.startTimeText
-      );
+      item.startDateObject = new Date(item.dateText + " " + item.startTimeText);
       item.endDateObject = new Date(item.dateText + " " + item.endTimeText);
     },
 
@@ -657,9 +667,8 @@ export default {
         this.block = [];
         if (select) this.selectBlock = [];
         this.dayText = date.getDayText("星期");
-        this.TRSObject = new Date(this.dateText + ' ' + timeRange[0] + ':00' );
-        this.TREObject = new Date(this.dateText + ' ' + (timeRange[1]) + ':00' );
       };
+      this.table.splice(0, this.table.length);
       this.table.push(new tl(startDate));
       if (days) {
         for (let i = 1; i < days; i++) {
@@ -688,22 +697,49 @@ export default {
       this.$nextTick(() => {
         tbody = document.querySelector("#tbody").offsetHeight;
         hours_height =
-          tbody /
-          (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0]);
+          tbody / (this.tableAttrs.timeRange[1] - this.tableAttrs.timeRange[0]);
         fn && fn();
       });
     },
 
     // 初始化课表
     load() {
-      // 计算七天时间，生成基础架构
+      if (this.tableAttrs.select) {
+        const selectBlockAllData = computed(() =>
+          this.table.reduce((acc, tl) => acc.concat(tl.selectBlock), [])
+        );
+        watch(
+          this.table,
+          () => {
+            this.$emit("update:selectData", [
+              ...(selectBlockAllData.value || []),
+            ]);
+          },
+          { deep: true }
+        );
+        watch(
+          () => this.selectData,
+          (newVal) => {
+            const oldVal = selectBlockAllData.value || [];
+            oldVal
+              .filter((e) => !newVal.includes(e))
+              .forEach((e) => {
+                this.table.forEach((tl) => {
+                  const i = tl.selectBlock.findIndex((s) => s === e);
+                  if (i !== -1) tl.selectBlock.splice(i, 1);
+                });
+              });
+          }
+        );
+      }
+      // 计算days，生成基础架构
       this.createBaseConstruction();
       this.getElementHeight(() => {
         // 生成块数据并放置到对应tl(列表项)
         this.data.forEach((item) => {
           try {
             item = new Block(item, this);
-            this.table.forEach(tl => {
+            this.table.forEach((tl) => {
               if (tl.dateText === item.dateText) tl.block.push(item);
             });
           } catch (err) {
@@ -821,16 +857,24 @@ export default {
           font-size: 20px;
 
           .content {
-            font-size: 14px;
+            box-sizing: border-box;
+            height: 100%;
+            font-size: 12px;
             text-align: center;
             padding: 10px;
             overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            // -webkit-line-clamp: 6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            div{
+              &:first-child{
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
+            }
           }
-          &:hover{
+          &:hover {
             z-index: 20;
           }
         }
@@ -876,7 +920,7 @@ export default {
             }
           }
 
-          &.current{
+          &.current {
             z-index: 24;
             opacity: 0.8;
           }
