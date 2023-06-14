@@ -71,7 +71,6 @@ const sheduleAttrs = reactive({
         v-model="sheduleAttrs.tableConfig.startDate"
         type="date"
         placeholder="Pick a day"
-        @change="change"
       />
     </el-col>
 
