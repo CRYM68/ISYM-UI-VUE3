@@ -54,7 +54,6 @@ const sheduleAttrs = reactive({
 </script>
 
 <template>
-  <!-- <div class="bg-red-600 mt-[30px]" style="width:200px; height:200px"></div> -->
   <el-row class="mb-5">
     <el-col>
       <Schedule

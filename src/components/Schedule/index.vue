@@ -20,19 +20,7 @@ let mouseDown = false;
 // let currentMoveSelectBlock = null;
 let moveType = undefined;
 
-// 代表已有选择块数量 ( 选择块计数器 )
-// let number = 0;
 
-// 供选择选择快中选择快数量 ( 计数器 )
-// let assign_number = 0;
-
-// --- 限制项（linmit）
-
-// 距离当前时间多少小时才可以进行预约和时间选择
-// let within_hours = 0;
-
-// 选择块最小时间（小时）
-// let min_time = 1;
 class CustomDate extends Date {
   // 格式化时间
   formatTime(format = "YYYY/MM/DD HH:MM") {
@@ -275,6 +263,7 @@ class SelectBlock extends Block {
 }
 export default {
   props: {
+    // 表格的配置
     tableConfig: {
       type: Object,
       validator: function (value) {
@@ -310,16 +299,11 @@ export default {
       type: Array,
       default: [],
     },
-
+    // 基础的块数据
     data: {
       type: Array,
       default: [],
     },
-
-    beforeRemove: {
-      type: Function,
-      default: () => true,
-    }
   },
   emits: ["update:selectData", "bclick", "sclick", "bdblclick", 'sdblclick'],
 
@@ -526,11 +510,6 @@ export default {
     /**
      * select 模式
      * */
-    // 移除可操作的时间块 1 select类型 2 assign类型
-    // removeSelectBlock(tlIndex, index) {
-    //   if (this.beforeRemove()) this.table[tlIndex].selectBlock.splice(index, 1);
-    // },
-
     // 添加普通选择块
     appendSelectBlock(event, tlIndex, index) {
       /**
@@ -799,8 +778,8 @@ export default {
 </script>
 
 <template>
+  <p>{{ a.a }}</p>
   <div class="classSchedule">
-    <!-- <p>{{ a.a }}</p> -->
     <!-- 时间戳 -->
     <div class="timestamp">
       <div class="thead"></div>
